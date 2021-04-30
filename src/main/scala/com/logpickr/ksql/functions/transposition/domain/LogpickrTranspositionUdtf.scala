@@ -21,13 +21,13 @@ class LogpickrTranspositionUdtf {
   private val log: Logger = LoggerFactory.getLogger(getClass)
 
   @Udtf(
-    description =
-      "Takes an array of " + Structs.STRUCT_SCHEMA_DESCRIPTOR + " and returns rows with a single " + Structs.STRUCT_SCHEMA_DESCRIPTOR + " per row",
+    description = "Transpose a row of timed tasks into multiple rows with one timed task per row",
     schema = Structs.STRUCT_SCHEMA_DESCRIPTOR
   )
   def logpickrTransposition(
       @UdfParameter(
         value = "input",
+        description = "An array corresponding to a row of timed tasks",
         schema = "ARRAY<" + Structs.STRUCT_SCHEMA_DESCRIPTOR + ">"
       ) input: util.List[Struct]
   ): util.List[Struct] = {
@@ -36,17 +36,30 @@ class LogpickrTranspositionUdtf {
 
   @Udtf(
     description =
-      "Takes an array of " + Structs.STRUCT_SCHEMA_DESCRIPTOR + " and returns rows with a single " + Structs.STRUCT_SCHEMA_SPECIAL_DESCRIPTOR + " per row",
+      "Transpose a row of timed tasks into multiple rows with one timed task (start and stop times) per row. Moreover, this function allows to calculate either the start date or the end date of the task, according to the other timed tasks of the row, and enables to order tasks with the same time either with an ascending or descending ordering according to the name of the task. Here is an example : \nThis function can be used to transform a line like :\n\n Case | Task 1     | Task 2     | Task 3     | Task 4     | Task 4     |\n 3    | 17/03/2020 | 16/03/2020 | 17/03/2020 | 18/03/2020 | 17/03/2020 |\n\n into : \n\n Case | Task   | Start      | Stop       |\n 3    | Task 2 | 16/03/2020 | 17/03/2020 |\n 3    | Task 1 | 17/03/2020 | 17/03/2020 |\n 3    | Task 3 | 17/03/2020 | 17/03/2020 |\n 3    | Task 5 | 17/03/2020 | 18/03/2020 |\n 3    | Task 4 | 18/03/2020 | 18/03/2020 |\n\n if isStartInformation = true and isTaskNameAscending = true. For more information and examples check the README of the UDF",
     schema = Structs.STRUCT_SCHEMA_SPECIAL_DESCRIPTOR
   )
   def logpickrTransposition(
       @UdfParameter(
         value = "input",
+        description = "An array corresponding to a row of timed tasks",
         schema = "ARRAY<" + Structs.STRUCT_SCHEMA_DESCRIPTOR + ">"
       ) input: util.List[Struct],
-      @UdfParameter(value = "dateFormat") dateFormat: String,
-      @UdfParameter(value = "isStartInformation") isStartInformation: Boolean,
-      @UdfParameter(value = "isTaskNameAscending") isTaskNameAscending: Boolean
+      @UdfParameter(
+        value = "dateFormat",
+        description =
+          "Corresponds to the date format, for instance : a task having the following date '12/01/2020' will need this parameter to be equal to 'dd/MM/yyyy'"
+      ) dateFormat: String,
+      @UdfParameter(
+        value = "isStartInformation",
+        description =
+          "true indicates that the date associated to a task in the input parameter corresponds to the start of the task and that it is therefore necessary to calculate the end of the task. On the contrary, false indicates that the date corresponds to the end of the task and that it is therefore necessary to calculate the start of the task (those calculations are performed according to the dates of the other tasks in the input row)"
+      ) isStartInformation: Boolean,
+      @UdfParameter(
+        value = "isTaskNameAscending",
+        description =
+          "true indicates that for tasks having the same date, the ordering is determined in an ascending manner according to the name of the tasks, while false indicates that the ordering is determined in a descending manner according to the name of the tasks"
+      ) isTaskNameAscending: Boolean
   ): util.List[Struct] = {
     Try {
       val simpleDateFormat = new SimpleDateFormat(dateFormat)
