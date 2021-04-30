@@ -83,7 +83,7 @@ CREATE STREAM s2 AS SELECT
           STRUCT(task := 'Etape 2', time := etape2), 
           STRUCT(task := 'Etape 3', time := etape3), 
           STRUCT(task := 'Etape 4', time := etape4), 
-          STRUCT(task := 'Etape 5', time := etape5)] AS etapes *
+          STRUCT(task := 'Etape 5', time := etape5)] AS etapes
     FROM s1 EMIT CHANGES;
 ```
 
@@ -246,7 +246,7 @@ CREATE STREAM s2 AS SELECT
           STRUCT(task := 'Etape 2', time := etape2), 
           STRUCT(task := 'Etape 3', time := etape3), 
           STRUCT(task := 'Etape 4', time := etape4), 
-          STRUCT(task := 'Etape 5', time := etape5)] AS etapes *
+          STRUCT(task := 'Etape 5', time := etape5)] AS etapes
     FROM s1 EMIT CHANGES;
 ```
 
@@ -311,3 +311,73 @@ Il est possible d'afficher le résultat final dans ksqlDB avec la commande :
 ```
 SELECT cas, activite, debut, fin FROM s4 EMIT CHANGES;
 ```
+
+
+## Informations complémentaires :
+
+En ce qui concerne le fonctionnement de l'UDF, et ce quelque soit la déclinaison, il faut faire attention en cas de colonnes supplémentaires dans la ligne initiale. 
+
+Par exemple si la ligne initiale correspond à :
+
+| Cas   | Etape 1    | Etape 2    | Etape 3    | Etape 4    | Etape 5    | Prix total                                                                                  |
+| ------|:----------:| :---------:|:----------:|:----------:|:----------:| -----------:
+| cas 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 | 240        |
+
+Une information est donnée sur le prix total lié au processus. En cas d'utilisation de l'UDF (par exemple la première déclinaison), si les STREAM créés gardent l'information de la colonne liée au prix total, comme avec l'exemple suivant :
+
+```
+CREATE STREAM s1 (
+	cas VARCHAR,
+	etape1 VARCHAR,
+	etape2 VARCHAR,
+	etape3 VARCHAR,
+	etape4 VARCHAR,
+	etape5 VARCHAR,
+	prix INTEGER
+) WITH (
+        kafka_topic = 's1',
+	partitions = 1,
+	value_format = 'avro'
+);
+```
+
+```
+CREATE STREAM s2 AS SELECT 
+    cas, 
+    ARRAY[STRUCT(task := 'Etape 1', time := etape1), 
+          STRUCT(task := 'Etape 2', time := etape2), 
+          STRUCT(task := 'Etape 3', time := etape3), 
+          STRUCT(task := 'Etape 4', time := etape4), 
+          STRUCT(task := 'Etape 5', time := etape5)] AS etapes,
+    prix
+    FROM s1 EMIT CHANGES;
+```
+
+```
+CREATE STREAM s3 AS SELECT 
+    cas, 
+    logpickr_transposition(etapes) AS etapes,
+    prix
+    FROM s2 EMIT CHANGES;
+```
+
+``` 
+CREATE STREAM s4 AS SELECT 
+    cas, 
+    etapes->task AS activite, 
+    etapes->time AS horodatage,
+    prix
+    FROM s3 EMIT CHANGES;
+```
+
+Et bien le prix est ensuite présent pour chacune des lignes créées. Le résultat pour l'exemple actuel serait :
+
+| Cas   | Activité    | Horodatage | Prix                                                                                        |
+| ------|:-----------:| :---------:| :---------: |
+| cas 1 | Etape 1     | 12/01/2020 | 240         |
+| cas 1 | Etape 2     | 14/01/2020 | 240         |
+| cas 1 | Etape 3     | 15/01/2020 | 240         |
+| cas 1 | Etape 4     | 16/01/2020 | 240         |
+| cas 1 | Etape 5     | 17/01/2020 | 240         |
+
+Et cela peut ensuite poser problème par exemple en cas de somme de toutes les valeurs dans la colonne Prix pour faire un calcul du prix pour tous les processus, car le résultat ne reflète alors pas la valeur du prix réel pour un processus (pour le processus présenté ici la valeur calculée serait de 5x240, alors que le prix réel est de 240)
