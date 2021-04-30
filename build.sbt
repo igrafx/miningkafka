@@ -7,12 +7,24 @@ organizationHomepage := Some(url("https://www.logpickr.com"))
 lazy val dependencies = new {
   private val kafkaVersion = "2.7.0"
   private val ksqldbUdfVersion = "6.1.1"
+  private val scalajVersion = "2.4.2"
+  private val json4sVersion = "3.6.10"
+  private val jooqVersion = "3.14.9"
+  private val jodaVersion = "2.10.10"
+  private val slf4jVersion = "1.7.25"
   private val scalatestVersion = "3.2.6"
   private val scalaTestMockitoVersion = "3.2.5.0"
 
   val kafka = "org.apache.kafka"     %% "kafka"             % kafkaVersion
   val kafkaApi = "org.apache.kafka"   % "connect-api"       % kafkaVersion
-  val ksqldbUdf = "io.confluent.ksql" % "ksqldb-udf"        % ksqldbUdfVersion
+  val ksqldbUdf = "io.confluent.ksql" % "ksqldb-udf"        % ksqldbUdfVersion exclude ("org.slf4j", "slf4j-log4j12")
+  val scalaj = "org.scalaj"          %% "scalaj-http"       % scalajVersion
+  val json4sNative = "org.json4s"    %% "json4s-native"     % json4sVersion
+  val json4sJackson = "org.json4s"   %% "json4s-jackson"    % json4sVersion
+  val jooq = "org.jooq"               % "jooq"              % jooqVersion
+  val joda = "joda-time"              % "joda-time"         % jodaVersion
+  val slf4jApi = "org.slf4j"          % "slf4j-api"         % slf4jVersion
+  val slf4jSimple = "org.slf4j"       % "slf4j-simple"      % slf4jVersion
   val scalatest = "org.scalatest"    %% "scalatest-funspec" % scalatestVersion        % Test
   val mockito = "org.scalatestplus"  %% "mockito-3-4"       % scalaTestMockitoVersion % Test
 }
@@ -21,6 +33,13 @@ libraryDependencies ++= Seq(
   dependencies.kafka,
   dependencies.kafkaApi,
   dependencies.ksqldbUdf,
+  dependencies.scalaj,
+  dependencies.json4sNative,
+  dependencies.json4sJackson,
+  dependencies.jooq,
+  dependencies.joda,
+  dependencies.slf4jApi,
+  dependencies.slf4jSimple,
   dependencies.scalatest,
   dependencies.mockito
 )
