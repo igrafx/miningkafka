@@ -71,7 +71,7 @@ CREATE STREAM s1 (
 ``` 
 CREATE STREAM s2 AS SELECT 
     caseId, 
-    logpickr_case_events(caseId, '8968a61c-1fb5-4721-9a8b-d09198eef06b', 'druid_system', 'lpkAuth', 'dev.logpickr.com', '8082') AS informations 
+    logpickr_case_events(caseId, '8968a61c-1fb5-4721-9a8b-d09198eef06b', 'druid_system', 'lpkAuth', 'dev-api.logpickr.com', '8082') AS informations 
     FROM s1 EMIT CHANGES;
 ```
 
