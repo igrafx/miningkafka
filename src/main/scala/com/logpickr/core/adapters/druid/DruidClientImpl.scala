@@ -97,7 +97,6 @@ class DruidClientImpl extends DruidClient {
         .asString
     }.map { druidResponse: HttpResponse[String] =>
       val parsedResponse = parse(druidResponse.body)
-
       if (druidResponse.isSuccess) {
         parsedResponse
       } else {

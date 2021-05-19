@@ -12,6 +12,7 @@ lazy val dependencies = new {
   private val jooqVersion = "3.14.9"
   private val jodaVersion = "2.10.10"
   private val slf4jVersion = "1.7.25"
+  private val apacheCodecVersion = "1.15"
   private val scalatestVersion = "3.2.6"
   private val scalaTestMockitoVersion = "3.2.5.0"
 
@@ -25,6 +26,7 @@ lazy val dependencies = new {
   val joda = "joda-time"              % "joda-time"         % jodaVersion
   val slf4jApi = "org.slf4j"          % "slf4j-api"         % slf4jVersion
   val slf4jSimple = "org.slf4j"       % "slf4j-simple"      % slf4jVersion
+  val apacheCodec = "commons-codec"   % "commons-codec"     % apacheCodecVersion
   val scalatest = "org.scalatest"    %% "scalatest-funspec" % scalatestVersion        % Test
   val mockito = "org.scalatestplus"  %% "mockito-3-4"       % scalaTestMockitoVersion % Test
 }
@@ -40,6 +42,7 @@ libraryDependencies ++= Seq(
   dependencies.joda,
   dependencies.slf4jApi,
   dependencies.slf4jSimple,
+  dependencies.apacheCodec,
   dependencies.scalatest,
   dependencies.mockito
 )

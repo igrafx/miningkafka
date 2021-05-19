@@ -10,6 +10,8 @@ Pour créer le **.jar** du projet, utiliser à la racine du projet la commande :
 sbt assembly
 ```
 
+Le jar contient toutes les UDF présentes dans le projet. Il est alors possible d'utiliser chacune des UDF dans ksqlDB
+
 Il faut ensuite placer le **.jar** créé (qui se trouve dans le répertoire **target/scala-2.13**) dans le répertoire **kafka/extensions/** du projet Logpickr Liveconnect. Si ce répertoire n'existe pas, le créer, et vérifier que les lignes suivantes se trouvent dans le service **ksqldb-server** du docker-compose.yml :
 
 ``` 
