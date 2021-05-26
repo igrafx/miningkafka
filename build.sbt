@@ -5,16 +5,16 @@ organizationName := "Logpickr"
 organizationHomepage := Some(url("https://www.logpickr.com"))
 
 lazy val dependencies = new {
-  private val kafkaVersion = "2.7.0"
+  private val kafkaVersion = "2.8.0"
   private val ksqldbUdfVersion = "6.1.1"
   private val scalajVersion = "2.4.2"
-  private val json4sVersion = "3.6.10"
-  private val jooqVersion = "3.14.9"
+  private val json4sVersion = "3.6.11"
+  private val jooqVersion = "3.14.11"
   private val jodaVersion = "2.10.10"
-  private val slf4jVersion = "1.7.25"
+  private val slf4jVersion = "1.7.30"
   private val apacheCodecVersion = "1.15"
-  private val scalatestVersion = "3.2.6"
-  private val scalaTestMockitoVersion = "3.2.5.0"
+  private val scalatestVersion = "3.2.9"
+  private val scalaTestMockitoVersion = "3.2.9.0"
 
   val kafka = "org.apache.kafka"     %% "kafka"             % kafkaVersion
   val kafkaApi = "org.apache.kafka"   % "connect-api"       % kafkaVersion
