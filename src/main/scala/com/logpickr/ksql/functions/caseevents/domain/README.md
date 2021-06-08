@@ -1,60 +1,60 @@
-# UDF requête Druid
+# UDF Case Events requesting Druid
 
-Pour avoir des informations sur cette UDF dans ksqlDB, tapper la commande :
+To get information about this UDF direclty in ksqlDB, use the command :
 
 ``` 
 DESCRIBE FUNCTION LOGPICKR_CASE_EVENTS;
 ```
 
-Cette UDF permet de récupérer depuis la Datasource _vertex de Druid les informations des colonnes suivantes liées à un caseId :
+This UDF allows retrieving from the **_vertex** Druid DataSource information related to a given caseId. The information corresponds to the following columns :
 
 * __time
 * enddate
 * vertex_name
 
-Signature de l'UDF : 
+**UDF Signature :**
 
 ``` 
 def logpickrCaseEvents(caseId: String, projectId: String, workgroupId: String, workgroupKey: String, host: String, port: String): util.List[Struct]
 ```
 
-où la Struct en retour a le format : 
+The output Struct format :
 
 ``` 
 STRUCT<START_DATE VARCHAR(STRING), END_DATE VARCHAR(STRING), VERTEX_NAME VARCHAR(STRING)>
 ```
 
-Avec **START_DATE** qui correspond à la colonne **__time**, **END_DATE** qui correspond à la colonne **enddate** et enfin **VERTEX_NAME** qui correspond à la colonne **vertex_name**
+Here, **START_DATE** corresponds to the **__time** column, **END_DATE** to the **enddate** one, and finally **VERTEX_NAME** which corresponds to the **vertex_name** column
 
-Néanmoins c'est bien un ARRAY de cette structure qui est retourné, pour récupérer les informations de chaque ligne associée au caseId
+Nevertheless, it is an Array with this Structure that is returned, in order to retrieve those information for each line associated to the caseId
 
-La requête SQL réalisée dans l'UDF est :
+The SQL request used by the UDF is the following :
 
 ``` 
 SELECT __time AS startdate, enddate, vertex_name AS vertexName
 FROM "projectId_vertex"
 WHERE vertex_name is not NULL AND caseid = 'caseIdParam'
 ```
-où **projectId** correspond à l'id du projet Logpickr et **caseIdParam** correspond au caseId passé en paramètre de l'UDF
+where **projectId** corresponds to the Logpickr project ID and **caseIdParam** corresponds to UDF parameter related to the caseId
 
-## Paramètres :
+## Parameters :
 
-* **caseId** : correspond au caseId dont on veut connaître les informations
-* **projectId** : correspond à l'id du projet Logpickr
-* **workgroupId** : correspond à l'id du workgroup Logpickr
-* **workgroupKey** : correspond à la clé du workgroup Logpickr
-* **host** : correspond à l'hôte Druid
-* **port** : correspond au port de connexion Druid
+* **caseId** : The caseId for which we want to get information
+* **projectId** : The id of the Logpickr project containing the information
+* **workgroupId** : The id of the Logpickr workgroup related to the project containing the information
+* **workgroupKey** : The key of the Logpickr workgroup related to the project containing the information
+* **host** : Corresponds to the Druid host
+* **port** : Corresponds to the Druid connexion port
 
-## Exemple d'utilisation dans ksqlDB :
+## Examples in ksqlDB
 
-* Commande permettant de prendre en compte les données présentes dans le STREAM source avant la création/affichage d'un nouveau STREAM :
+To follow the examples, start by using the following command to apply modifications of a STREAM on data inserted before the creation/display of the STREAM :
 
 ``` 
 SET 'auto.offset.reset'='earliest';
 ```
 
-* Création du STREAM initial comportant les caseId dont on veut obtenir des informations :
+* Creation of the initial STREAM storing the caseId for which we want to get information :
 
 ```
 CREATE STREAM s1 (
@@ -66,7 +66,7 @@ CREATE STREAM s1 (
   );
 ```
 
-* Création du STREAM réalisant l'appel à l'UDF (les paramètres de l'UDF sont données ici à titre d'exemple et peuvent être modifiés, sauf pour le caseId, qui doit correspondre à la colonne caseId du STREAM créé précédemment) :
+* Creation of the STREAM doing the call to the UDF (here the UDF parameters are given as an example and can be modified, except for the caseId, as it must correspond to the caseId column of the previous STREAM)
 
 ``` 
 CREATE STREAM s2 AS SELECT 
@@ -75,13 +75,13 @@ CREATE STREAM s2 AS SELECT
     FROM s1 EMIT CHANGES;
 ```
 
-* Insertion d'un caseId dont on veut connaître les informations (pour récupérer des informations il faut que ce caseId existe dans le projet Logpickr) :
+* Insertion of a caseID for which we want to get information (in order to retrieve information for a given caseId, the caseId needs to exist in the Logpickr project)
 
 ``` 
 INSERT INTO s1 (caseId) VALUES ('3');
 ```
 
-* Affichage du résultat :
+* Display of the final result
 
 ```` 
 SELECT caseId, informations FROM s2 EMIT CHANGES;

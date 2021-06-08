@@ -1,339 +1,345 @@
 # UDF Transposition
 
-Cette UDF de type *Tabular* permet de transposer des données depuis ksqlDB. L'UDF propose par ailleurs deux déclinaisons, et il est possible d'avoir des informations sur l'UDF directement dans ksqlDB avec la commande :
+This UDF of type *Tabular* allows transposing data from ksqlDB. Moreover, the UDF offers 2 variations.
+To get information about the UDF directly in kqslDB, use the following command :
 
 ```
 DESCRIBE FUNCTION LOGPICKR_TRANSPOSITION;
 ```
 
-Commencer par rentrer la commande suivante pour appliquer les modifications d'un STREAM sur des données insérées avant la création/l'affichage du STREAM :
+Start by using the following command to apply modifications of a STREAM on data inserted before the creation/display of the STREAM :
+
 ``` 
 SET 'auto.offset.reset'='earliest';
 ```
 
-## Déclinaison 1
+## Variation 1
 
-signature de l'UDF : 
+**UDF Signature :**
+
 ```
 logpickrTransposition(input: util.List[Struct]): util.List[Struct]
 ```
 
-Les structures en entrée et en sortie sont toutes les deux au format :
+Both the input and output structures follow the format :
 
 ``` 
 "STRUCT<TASK VARCHAR(STRING), TIME VARCHAR(STRING)>"
 ```
 
-L'objectif de cette déclinaison est simplement de permettre d'*exploser* les colonnes d'une ligne en plusieurs lignes avec comme colonnes leur activité et l'horodatage
+This variation aims to *explode* the columns of a row into multiple rows having for columns their **Task** and **Timestamp** 
 
-Par exemple si l'on a en entrée ces données 
+For instance, if we have the following data in input :
 
-| Cas   | Etape 1    | Etape 2    | Etape 3    | Etape 4    | Etape 5                                                                                     |
-| ------|:----------:| :---------:|:----------:|:----------:|-----------:|
-| cas 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 |
-| cas 2 | 14/02/2020 | 15/02/2020 | 18/02/2020 |            | 18/02/2020 |
-| cas 3 | 17/03/2020 |            | 24/03/2020 |            |            |
+| Case   | Step 1     | Step 2     | Step 3     | Step 4     | Step 5                                                                                      |
+| -------|:----------:| :---------:|:----------:|:----------:|-----------:|
+| case 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 |
+| case 2 | 14/02/2020 | 15/02/2020 | 18/02/2020 |            | 18/02/2020 |
+| case 3 | 17/03/2020 |            | 24/03/2020 |            |            |
 
-On va chercher à obtenir en sortie :
+We expect the following output :
 
-| Cas   | Activité    | Horodatage                                                                                          |
-| ------|:-----------:| :---------:|
-| cas 1 | Etape 1     | 12/01/2020 |
-| cas 1 | Etape 2     | 14/01/2020 |
-| cas 1 | Etape 3     | 15/01/2020 |
-| cas 1 | Etape 4     | 16/01/2020 |
-| cas 1 | Etape 5     | 17/01/2020 |
-| cas 2 | Etape 1     | 14/02/2020 |
-| cas 2 | Etape 2     | 15/02/2020 |
-| cas 2 | Etape 3     | 18/02/2020 |
-| cas 2 | Etape 5     | 18/02/2020 |
-| cas 3 | Etape 1     | 17/03/2020 |
-| cas 3 | Etape 3     | 24/03/2020 |
+| Case   | Task     | Timestamp                                                                                          |
+| -------|:--------:| :---------:|
+| case 1 | Step 1   | 12/01/2020 |
+| case 1 | Step 2   | 14/01/2020 |
+| case 1 | Step 3   | 15/01/2020 |
+| case 1 | Step 4   | 16/01/2020 |
+| case 1 | Step 5   | 17/01/2020 |
+| case 2 | Step 1   | 14/02/2020 |
+| case 2 | Step 2   | 15/02/2020 |
+| case 2 | Step 3   | 18/02/2020 |
+| case 2 | Step 5   | 18/02/2020 |
+| case 3 | Step 1   | 17/03/2020 |
+| case 3 | Step 3   | 24/03/2020 |
 
-Néanmoins, l'UDF ne permettant pas directement de passer de l'un à l'autre, il faut utiliser en supplément les STREAM de ksqlDB.
+Nevertheless, the UDF doesn't allow to directly go from the first table to the second one, and we need to use intermediate ksqlDB STREAMs
 
-L'UDF prend en entrée une liste java de **STRUCT<TASK VARCHAR(STRING), TIME VARCHAR(STRING)>**, où la liste correspond à une ligne, et où chaque élement correspond à une colonne dans la ligne (*par exemple le premier élément de la liste correspondante à la première ligne de l'exemple ci-dessus est : **STRUCT<Etape 1, 12/01/2020>***)
+The UDF takes in input a **Java List** of type **STRUCT<TASK VARCHAR(STRING), TIME VARCHAR(STRING)>**, where the list corresponds to one row, and where each element in the list corresponds to one Column in the row (*for instance the first element of the List which corresponds to the first row of the former example is : **STRUCT<Step 1, 12/01/2020>***)
 
-Ici, la sortie est identique à l'entrée car c'est le type de l'UDF, à savoir **Tabular**, qui va permettre à ksqlDB de savoir qu'il faut créer une ligne pour chaque élément présent dans la liste retour. La fonction se contente ici seulement de supprimer de la liste en entrée les élements qui ont un champ **TIME** vide ou null
+Here, the type of the output is identical to the type of the input because it is the type of the UDF (**Tabular**), which tells to ksqlDB to create a row for each element present in the output List.  
+The first variation just removes from the input List the elements with a **TIME** field empty or null
 
-Pour tester cette déclinaison directement dans ksqlDB, il suffit de lancer ksqlDB comme décrit dans le CONTRIBUTING.md à la racine du projet, puis de lancer les commandes suivantes :
+To test this variation directly in ksqlDB, we just need to launch ksqlDB as described in the CONTRIBUTING.md located at the root of the project. Then we can use the following commands :
 
-* Création du STREAM initial représentant les lignes avec leurs colonnes au format : Cas | Etape 1 | Etape 2 | Etape 3 | Etape 4 | Etape 5
+* Creation of the initial STREAM representing the rows with their columns, each row following the format : Case | Step 1 | Step 2 | Step 3 | Step 4 | Step 5
+
 ```
 CREATE STREAM s1 (
-	cas VARCHAR,
-	etape1 VARCHAR,
-	etape2 VARCHAR,
-	etape3 VARCHAR,
-	etape4 VARCHAR,
-	etape5 VARCHAR
+	case VARCHAR,
+	step1 VARCHAR,
+	step2 VARCHAR,
+	step3 VARCHAR,
+	step4 VARCHAR,
+	step5 VARCHAR
 ) WITH (
-    	kafka_topic = 's1',
+        kafka_topic = 's1',
 	partitions = 1,
 	value_format = 'avro'
 );
 ```
 
-* Création du STREAM permettant l'appel à l'UDF, ici un ARRAY<STRUCT(...), STRUCT(...), ...> correspond au paramètre **input** de l'UDF (ARRAY étant le type de ksqlDB qui fait la correspondance avec util.List de Java)
+* Creation of the STREAM preparing the call to the UDF, here an ARRAY<STRUCT(...), STRUCT(...), ...> corresponds to the UDF **input** parameter (ARRAY being the ksqlDB type corresponding to the Java util.List)
 
 ```
 CREATE STREAM s2 AS SELECT 
-    cas, 
-    ARRAY[STRUCT(task := 'Etape 1', time := etape1), 
-          STRUCT(task := 'Etape 2', time := etape2), 
-          STRUCT(task := 'Etape 3', time := etape3), 
-          STRUCT(task := 'Etape 4', time := etape4), 
-          STRUCT(task := 'Etape 5', time := etape5)] AS etapes
+    case, 
+    ARRAY[STRUCT(task := 'Step 1', time := step1), 
+          STRUCT(task := 'Step 2', time := step2), 
+          STRUCT(task := 'Step 3', time := step3), 
+          STRUCT(task := 'Step 4', time := step4), 
+          STRUCT(task := 'Step 5', time := step5)] AS steps
     FROM s1 EMIT CHANGES;
 ```
 
-* Création du STREAM avec l'**appel à l'UDF logpickr_transposition**
+* Creation of the STREAM doing the **call to the logpickr_transposition UDF**
 
 ```
 CREATE STREAM s3 AS SELECT 
-    cas, 
-    logpickr_transposition(etapes) AS etapes 
+    case, 
+    logpickr_transposition(steps) AS steps 
     FROM s2 EMIT CHANGES;
 ```
 
-Avec l'exemple précédent, le STREAM s3 contient les données suivantes :
+With the previous example, the s3 STREAM contains the following data :
 
-| cas   | etapes                                                                                              |
+| case   | steps                                                                                              |
 | ------|:---------------------------:|
-| cas 1 | STRUCT<Etape 1, 12/01/2020> | 
-| cas 1 | STRUCT<Etape 2, 14/01/2020> | 
-| cas 1 | STRUCT<Etape 3, 15/01/2020> | 
-| cas 1 | STRUCT<Etape 4, 16/01/2020> | 
-| cas 1 | STRUCT<Etape 5, 17/01/2020> | 
-| cas 2 | STRUCT<Etape 1, 14/02/2020> | 
-| cas 2 | STRUCT<Etape 2, 15/02/2020> | 
-| cas 2 | STRUCT<Etape 3, 18/02/2020> | 
-| cas 2 | STRUCT<Etape 5, 18/02/2020> | 
-| cas 3 | STRUCT<Etape 1, 17/03/2020> | 
-| cas 3 | STRUCT<Etape 3, 24/03/2020> | 
+| case 1 | STRUCT<Step 1, 12/01/2020> | 
+| case 1 | STRUCT<Step 2, 14/01/2020> | 
+| case 1 | STRUCT<Step 3, 15/01/2020> | 
+| case 1 | STRUCT<Step 4, 16/01/2020> | 
+| case 1 | STRUCT<Step 5, 17/01/2020> | 
+| case 2 | STRUCT<Step 1, 14/02/2020> | 
+| case 2 | STRUCT<Step 2, 15/02/2020> | 
+| case 2 | STRUCT<Step 3, 18/02/2020> | 
+| case 2 | STRUCT<Step 5, 18/02/2020> | 
+| case 3 | STRUCT<Step 1, 17/03/2020> | 
+| case 3 | STRUCT<Step 3, 24/03/2020> | 
 
-* Création du STREAM final en déconstruisant la STRUCT de **s3** en deux colonnes différentes
+* Creation of the final STREAM which deconstructs the STRUCT from **s3** into two different columns
 
 ``` 
 CREATE STREAM s4 AS SELECT 
-    cas, 
-    etapes->task AS activite, 
-    etapes->time AS horodatage 
+    case, 
+    steps->task AS activity, 
+    steps->time AS timestamp 
     FROM s3 EMIT CHANGES;
 ```
 
-Une fois les STREAMS créés il est possible d'ajouter des données, et dans ce qui suit, chaque INSERT correspond à une ligne
+Once all the STREAMs have been created, it is possible to add the data, and here each INSERT corresponds to a row
 
 ```
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas1', '12/01/2020', '14/01/2020', '15/01/2020', '16/01/2020', '17/01/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas2', '14/02/2020', '15/02/2020', '18/02/2020', '', '18/02/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas3', '17/03/2020', '', '24/03/2020', '', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 1', '12/01/2020', '14/01/2020', '15/01/2020', '16/01/2020', '17/01/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 2', '14/02/2020', '15/02/2020', '18/02/2020', '', '18/02/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 3', '17/03/2020', '', '24/03/2020', '', '');
 
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas4', '17/03/2020', '25/03/2020', '', '16/03/2020', '24/03/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas5', '', '', '', '16/03/2020', '');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas6', '', '', '', '', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 4', '17/03/2020', '25/03/2020', '', '16/03/2020', '24/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 5', '', '', '', '16/03/2020', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 6', '', '', '', '', '');
 
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas7', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas8', '17/03/2020', '16/03/2020', '17/03/2020', '18/03/2020', '17/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 7', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('cas e8', '17/03/2020', '16/03/2020', '17/03/2020', '18/03/2020', '17/03/2020');
 ```
 
-Il est possible d'afficher le résultat final dans ksqlDB avec la commande :
+Eventually, it is possible to display the final result in ksqlDB with :
 
 ```
-SELECT cas, activite, horodatage FROM s4 EMIT CHANGES;
+SELECT case, activity, timestamp FROM s4 EMIT CHANGES;
 ```
 
-## Déclinaison 2
+## Variation 2
 
-signature de l'UDF :
+**UDF Signature**
 
 ```
 logpickrTransposition(input: util.List[Struct], dateFormat: String, isStartInformation: Boolean, isTaskNameAscending: Boolean): util.List[Struct]
 ```
 
-La structure en entrée est :
+The input structure is :
 
 ``` 
 "STRUCT<TASK VARCHAR(STRING), TIME VARCHAR(STRING)>"
 ```
 
-La structure en sortie est : 
+The output structure is :
 
 ``` 
 "STRUCT<TASK VARCHAR(STRING), START VARCHAR(STRING), STOP VARCHAR(STRING)>"
 ``` 
 
-Le principe de cette fonction est d'*exploser* une ligne avec plusieurs colonnes en plusieurs lignes avec quatre colonnes (pour le cas, l'activité, la date de début et la date de fin)
+This function aims to **explode** a row with multiple columns into multiple rows with 4 columns each (for the *case*, the **activity**, the **starting date**, and the **ending date**)
 
-Pour les paramètres :
+For the parameters :
 
-* **input** : correspond comme pour la déclinaison 1 de l'UDF à la ligne que l'on passe en entrée et que l'on veut *exploser*
-* **dateFormat** : correspond au format de la date (ex: pour une activité qui a pour date 12/01/2020, le format est "dd/MM/yyyy" )
-* **isStartInformation** : true indique que la date associée à l'activité en entrée correspond au début de l'activité, et qu'il faut donc calculer la fin, et false indique que la date correspond à la fin de l'activité et qu'il faut donc calculer le début (les calculs se font quand c'est possible en fonctions des dates des autres activités)
-* **isTaskNameAscending** : true indique qu'en cas de date identiques, l'ordre est déterminé de manière ascendante par le nom de l'activité, alors que false signifie que l'ordre est determiné de manière descendante par le nom de l'activité
+* **input** : corresponds as for the first variation to the input row we want to **explode**
+* **dateFormat** : corresponds to the date format (for instance : for an activity having for date 12/01/2020, the date format is "dd/MM/yyyy" )
+* **isStartInformation** : **true** indicates that the date associated to the activity corresponds to the beginning of the activity, and that we hence need to calculate the end of the activity. **false** indicates that the date corresponds to the end of the activity meaning we have to calculate its start date (calculations are made when possible in function of the dates of the other activities)
+* **isTaskNameAscending** : **true** indicates that in case of identical dates for two (or more) rows, the order of the rows is determined in an ascending manner according to the activity's name, while **false** means that the order is determined in a descending manner according to the activity's name
 
-Par exemple en cas d'entrée :
+If we take this case in input :
 
-| Cas   | Etape 1    | Etape 2    | Etape 3    | Etape 4    | Etape 5                                                                                     |
-| ------|:----------:| :---------:|:----------:|:----------:|-----------:|
-| cas 1 | 17/03/2020 | 16/03/2020 | 17/03/2020 | 18/03/2020 | 17/03/2020 |
+| Case   | Step 1     | Step 2     | Step 3     | Step 4     | Step 5                                                                                     |
+| -------|:----------:| :---------:|:----------:|:----------:|-----------:|
+| case 1 | 17/03/2020 | 16/03/2020 | 17/03/2020 | 18/03/2020 | 17/03/2020 |
 
-La sortie est la suivante si **isStartInformation = true** et **isTaskNameAscending = true** :
+We get the following output if **isStartInformation = true** and **isTaskNameAscending = true** :
 
-| Cas   | Activité    | Debut      | Fin                                                                                        |
+| Case   | Activity   | Start      | End                                                                                        |
 | ------|:-----------:| :---------:| :---------: |
-| cas 1 | Etape 2     | 16/03/2020 | 17/03/2020  |
-| cas 1 | Etape 1     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 3     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 5     | 17/03/2020 | 18/03/2020  |
-| cas 1 | Etape 4     | 18/03/2020 | 18/03/2020  |
+| case 1 | Step 2     | 16/03/2020 | 17/03/2020  |
+| case 1 | Step 1     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 3     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 5     | 17/03/2020 | 18/03/2020  |
+| case 1 | Step 4     | 18/03/2020 | 18/03/2020  |
 
-La sortie est la suivante si **isStartInformation = true** et **isTaskNameAscending = false** :
+We get the following output if **isStartInformation = true** and **isTaskNameAscending = false** :
 
-| Cas   | Activité    | Debut      | Fin                                                                                        |
+| Case   | Activity   | Start      | End                                                                                              |
 | ------|:-----------:| :---------:| :---------: |
-| cas 1 | Etape 2     | 16/03/2020 | 17/03/2020  |
-| cas 1 | Etape 5     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 3     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 1     | 17/03/2020 | 18/03/2020  |
-| cas 1 | Etape 4     | 18/03/2020 | 18/03/2020  |
+| case 1 | Step 2     | 16/03/2020 | 17/03/2020  |
+| case 1 | Step 5     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 3     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 1     | 17/03/2020 | 18/03/2020  |
+| case 1 | Step 4     | 18/03/2020 | 18/03/2020  |
 
-La sortie est la suivante si **isStartInformation = false** et **isTaskNameAscending = true** :
+We get the following output if **isStartInformation = false** and **isTaskNameAscending = true** :
 
-| Cas   | Activité    | Debut      | Fin                                                                                        |
+| Case   | Activity   | Start      | End                                                                                              |
 | ------|:-----------:| :---------:| :---------: |
-| cas 1 | Etape 2     | 16/03/2020 | 16/03/2020  |
-| cas 1 | Etape 1     | 16/03/2020 | 17/03/2020  |
-| cas 1 | Etape 3     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 5     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 4     | 17/03/2020 | 18/03/2020  |
+| case 1 | Step 2     | 16/03/2020 | 16/03/2020  |
+| case 1 | Step 1     | 16/03/2020 | 17/03/2020  |
+| case 1 | Step 3     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 5     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 4     | 17/03/2020 | 18/03/2020  |
 
-La sortie est la suivante si **isStartInformation = false** et **isTaskNameAscending = false** :
+We get the following output if si **isStartInformation = false** and **isTaskNameAscending = false** :
 
-| Cas   | Activité    | Debut      | Fin                                                                                        |
+| Case   | Activity   | Start      | End                                                                                               |
 | ------|:-----------:| :---------:| :---------: |
-| cas 1 | Etape 2     | 16/03/2020 | 16/03/2020  |
-| cas 1 | Etape 5     | 16/03/2020 | 17/03/2020  |
-| cas 1 | Etape 3     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 1     | 17/03/2020 | 17/03/2020  |
-| cas 1 | Etape 4     | 17/03/2020 | 18/03/2020  |
+| case 1 | Step 2     | 16/03/2020 | 16/03/2020  |
+| case 1 | Step 5     | 16/03/2020 | 17/03/2020  |
+| case 1 | Step 3     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 1     | 17/03/2020 | 17/03/2020  |
+| case 1 | Step 4     | 17/03/2020 | 18/03/2020  |
 
-Pour tester cette déclinaison directement dans ksqlDB, il suffit de lancer ksqlDB comme décrit dans le CONTRIBUTING.md à la racine du projet, puis de lancer les commandes suivantes :
+To test this variation directly in ksqlDB, we first need to launch ksqlDB as described in the CONTRIBUTING.md file located at the root of the project. Then, write the following commands :
 
-(Les deux premières créations de STREAMS sont identiques à celles de la première déclinaison)
-* Création du STREAM initial représentant les lignes avec leurs colonnes au format : Cas | Etape 1 | Etape 2 | Etape 3 | Etape 4 | Etape 5
+(The first two STREAMs are the same as the ones in the first variation)
+* Creation of the initial STREAM representing the rows with their columns, each row following the format : Case | Step 1 | Step 2 | Step 3 | Step 4 | Step 5
+
 ```
 CREATE STREAM s1 (
-	cas VARCHAR,
-	etape1 VARCHAR,
-	etape2 VARCHAR,
-	etape3 VARCHAR,
-	etape4 VARCHAR,
-	etape5 VARCHAR
+	case VARCHAR,
+	step1 VARCHAR,
+	step2 VARCHAR,
+	step3 VARCHAR,
+	step4 VARCHAR,
+	step5 VARCHAR
 ) WITH (
-    	kafka_topic = 's1',
+        kafka_topic = 's1',
 	partitions = 1,
 	value_format = 'avro'
 );
 ```
 
-* Création du STREAM permettant l'appel à l'UDF, ici un ARRAY<STRUCT(...), STRUCT(...), ...> correspond au paramètre **input** de l'UDF (ARRAY étant le type de ksqlDB qui fait la correspondance avec util.List de Java)
+* Creation of the STREAM preparing the call to the UDF, here an ARRAY<STRUCT(...), STRUCT(...), ...> corresponds to the UDF **input** parameter (ARRAY being the ksqlDB type corresponding to the Java util.List)
 
 ```
 CREATE STREAM s2 AS SELECT 
-    cas, 
-    ARRAY[STRUCT(task := 'Etape 1', time := etape1), 
-          STRUCT(task := 'Etape 2', time := etape2), 
-          STRUCT(task := 'Etape 3', time := etape3), 
-          STRUCT(task := 'Etape 4', time := etape4), 
-          STRUCT(task := 'Etape 5', time := etape5)] AS etapes
+    case, 
+    ARRAY[STRUCT(task := 'Step 1', time := step1), 
+          STRUCT(task := 'Step 2', time := step2), 
+          STRUCT(task := 'Step 3', time := step3), 
+          STRUCT(task := 'Step 4', time := step4), 
+          STRUCT(task := 'Step 5', time := step5)] AS steps
     FROM s1 EMIT CHANGES;
 ```
 
-* Création du STREAM avec **appel à l'UDF logpickr_transposition**
+* Creation of the STREAM doing the **call to the logpickr_transposition UDF function**
 
 ```
 CREATE STREAM s3 AS SELECT 
-    cas, 
-    logpickr_transposition(etapes, "dd/MM/yyyy", true, true) AS etapes 
+    case, 
+    logpickr_transposition(steps, "dd/MM/yyyy", true, true) AS steps 
     FROM s2 EMIT CHANGES;
 ```
-ou 
+or 
 ```
 CREATE STREAM s3 AS SELECT 
-    cas, 
-    logpickr_transposition(etapes, "dd/MM/yyyy", true, false) AS etapes 
+    case, 
+    logpickr_transposition(steps, "dd/MM/yyyy", true, false) AS steps 
     FROM s2 EMIT CHANGES;
 ```
-ou
+or
 ```
 CREATE STREAM s3 AS SELECT 
-    cas, 
-    logpickr_transposition(etapes, "dd/MM/yyyy", false, true) AS etapes 
+    case, 
+    logpickr_transposition(steps, "dd/MM/yyyy", false, true) AS steps 
     FROM s2 EMIT CHANGES;
 ```
-ou
+or
 ```
 CREATE STREAM s3 AS SELECT 
-    cas, 
-    logpickr_transposition(etapes, "dd/MM/yyyy", false, false) AS etapes 
+    case, 
+    logpickr_transposition(steps, "dd/MM/yyyy", false, false) AS steps 
     FROM s2 EMIT CHANGES;
 ```
 
-* Création du STREAM final en déconstruisant la STRUCT de **s3** en quatre colonnes différentes
+Creation of the final STREAM which deconstructs the STRUCT from **s3** into 4 different columns
 
 ``` 
 CREATE STREAM s4 AS SELECT 
-    cas, 
-    etapes->task AS activite, 
-    etapes->start AS debut,
-    etapes->stop AS fin 
+    case, 
+    steps->task AS activity, 
+    steps->start AS start_date,
+    steps->stop AS end_date 
     FROM s3 EMIT CHANGES;
 ```
 
-Une fois les STREAMS créés il est possible d'ajouter des données, et dans ce qui suit, chaque INSERT correspond à une ligne
+Once all the STREAMs have been created, it is possible to add the data, and here each INSERT corresponds to a row
 
 ```
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas1', '12/01/2020', '14/01/2020', '15/01/2020', '16/01/2020', '17/01/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas2', '14/02/2020', '15/02/2020', '18/02/2020', '', '18/02/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas3', '17/03/2020', '', '24/03/2020', '', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 1', '12/01/2020', '14/01/2020', '15/01/2020', '16/01/2020', '17/01/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 2', '14/02/2020', '15/02/2020', '18/02/2020', '', '18/02/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 3', '17/03/2020', '', '24/03/2020', '', '');
 
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas4', '17/03/2020', '25/03/2020', '', '16/03/2020', '24/03/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas5', '', '', '', '16/03/2020', '');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas6', '', '', '', '', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 4', '17/03/2020', '25/03/2020', '', '16/03/2020', '24/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 5', '', '', '', '16/03/2020', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 6', '', '', '', '', '');
 
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas7', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020');
-INSERT INTO s1 (cas, etape1, etape2, etape3, etape4, etape5) VALUES ('cas8', '17/03/2020', '16/03/2020', '17/03/2020', '18/03/2020', '17/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 7', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 8', '17/03/2020', '16/03/2020', '17/03/2020', '18/03/2020', '17/03/2020');
 ```
 
-Il est possible d'afficher le résultat final dans ksqlDB avec la commande :
+It is now possible to display the final result with :
 
 ```
 SELECT cas, activite, debut, fin FROM s4 EMIT CHANGES;
 ```
 
 
-## Informations complémentaires :
+## Further Information :
 
-En ce qui concerne le fonctionnement de l'UDF, et ce quelque soit la déclinaison, il faut faire attention en cas de colonnes supplémentaires dans la ligne initiale. 
+Concerning the behavior of the UDF, and this for both variation, there is a need to be careful about the additional columns in the initial row. 
 
-Par exemple si la ligne initiale correspond à :
+For instance if the initial row corresponds to :
 
-| Cas   | Etape 1    | Etape 2    | Etape 3    | Etape 4    | Etape 5    | Prix total                                                                                  |
-| ------|:----------:| :---------:|:----------:|:----------:|:----------:| -----------:
-| cas 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 | 240        |
+| Case   | Step 1     | Step 2     | Step 3     | Step 4     | Step 5     | Total Price                                                                               |
+| -------|:----------:| :---------:|:----------:|:----------:|:----------:| -----------:
+| case 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 | 240        |
 
-Une information est donnée sur le prix total lié au processus. En cas d'utilisation de l'UDF (par exemple la première déclinaison), si les STREAM créés gardent l'information de la colonne liée au prix total, comme avec l'exemple suivant :
+An information is given about the Total Price related to the process. In case of utilisation of the UDF (for instance with the first variation), if the created STREAMs keep the information of the Total Price column, as with the following example :
 
 ```
 CREATE STREAM s1 (
-	cas VARCHAR,
-	etape1 VARCHAR,
-	etape2 VARCHAR,
-	etape3 VARCHAR,
-	etape4 VARCHAR,
-	etape5 VARCHAR,
-	prix INTEGER
+	case VARCHAR,
+	step1 VARCHAR,
+	step2 VARCHAR,
+	step3 VARCHAR,
+	step4 VARCHAR,
+	step5 VARCHAR,
+	price INTEGER
 ) WITH (
         kafka_topic = 's1',
 	partitions = 1,
@@ -343,41 +349,41 @@ CREATE STREAM s1 (
 
 ```
 CREATE STREAM s2 AS SELECT 
-    cas, 
-    ARRAY[STRUCT(task := 'Etape 1', time := etape1), 
-          STRUCT(task := 'Etape 2', time := etape2), 
-          STRUCT(task := 'Etape 3', time := etape3), 
-          STRUCT(task := 'Etape 4', time := etape4), 
-          STRUCT(task := 'Etape 5', time := etape5)] AS etapes,
-    prix
+    case, 
+    ARRAY[STRUCT(task := 'Step 1', time := step1), 
+          STRUCT(task := 'Step 2', time := step2), 
+          STRUCT(task := 'Step 3', time := step3), 
+          STRUCT(task := 'Step 4', time := step4), 
+          STRUCT(task := 'Step 5', time := step5)] AS steps,
+    price
     FROM s1 EMIT CHANGES;
 ```
 
 ```
 CREATE STREAM s3 AS SELECT 
-    cas, 
-    logpickr_transposition(etapes) AS etapes,
-    prix
+    case, 
+    logpickr_transposition(steps) AS steps,
+    price
     FROM s2 EMIT CHANGES;
 ```
 
 ``` 
 CREATE STREAM s4 AS SELECT 
-    cas, 
-    etapes->task AS activite, 
-    etapes->time AS horodatage,
-    prix
+    case, 
+    steps->task AS activity, 
+    steps->time AS timestamp,
+    price
     FROM s3 EMIT CHANGES;
 ```
 
-Et bien le prix est ensuite présent pour chacune des lignes créées. Le résultat pour l'exemple actuel serait :
+Then the Total Price is present for each of the created rows. The result for the current example would be :
 
-| Cas   | Activité    | Horodatage | Prix                                                                                        |
+| Case   | Activity   | Timestamp  | Price                                                                                        |
 | ------|:-----------:| :---------:| :---------: |
-| cas 1 | Etape 1     | 12/01/2020 | 240         |
-| cas 1 | Etape 2     | 14/01/2020 | 240         |
-| cas 1 | Etape 3     | 15/01/2020 | 240         |
-| cas 1 | Etape 4     | 16/01/2020 | 240         |
-| cas 1 | Etape 5     | 17/01/2020 | 240         |
+| case 1 | Step 1     | 12/01/2020 | 240         |
+| case 1 | Step 2     | 14/01/2020 | 240         |
+| case 1 | Step 3     | 15/01/2020 | 240         |
+| case 1 | Step 4     | 16/01/2020 | 240         |
+| case 1 | Step 5     | 17/01/2020 | 240         |
 
-Et cela peut ensuite poser problème par exemple en cas de somme de toutes les valeurs dans la colonne Prix pour faire un calcul du prix pour tous les processus, car le résultat ne reflète alors pas la valeur du prix réel pour un processus (pour le processus présenté ici la valeur calculée serait de 5x240, alors que le prix réel est de 240)
+This can be problematic if for instance we then want to sum all the values in the Price column to determine the total price of all the process, because the result wouldn't take the real value for the total price of each process (for instance, for the process presented here, the calculated value would be 5x240, whereas the real total price of the process is 240)

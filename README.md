@@ -29,3 +29,10 @@ UDF permettant d'obtenir des informations liées à un caseId dans Druid
 * package : **com.logpickr.ksql.functions.sessions.domain**
 
 UDTF répartissant un ensemble de lignes en différentes sessions
+
+## UDF Prediction
+
+* name in ksqlDB : **logpickr_prediction**
+* package : **com.logpickr.ksql.functions.prediction.adapters.api**
+  
+UDF allowing retrieving prediction information on given caseIds belonging to a Logpickr project
