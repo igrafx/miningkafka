@@ -1,6 +1,6 @@
 # UDF Sessions
 
-This UDF of type Tabular allows to divide a collection of ordered lines into sessions (a session has its own ID and corresponds to a regroupment of lines sharing a common point). To create a session, Regex are used in order to describe the lines belonging to a same group, the session's starting lines, the session's ending lines, and the lines that need to be ignored.
+This UDF of type *Tabular* allows to divide a collection of ordered lines into sessions (a session has its own ID and corresponds to a regroupment of lines sharing a common point). To create a session, Regex are used in order to describe the lines belonging to a same group, the session's starting lines, the session's ending lines, and the lines that need to be ignored.
 
 To retrieve information about this UDF directly in ksqlDB, use the following command :
 

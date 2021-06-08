@@ -22,6 +22,7 @@ lazy val dependencies = new {
   val scalaj = "org.scalaj"          %% "scalaj-http"       % scalajVersion
   val json4sNative = "org.json4s"    %% "json4s-native"     % json4sVersion
   val json4sJackson = "org.json4s"   %% "json4s-jackson"    % json4sVersion
+  val json4sExt = "org.json4s"       %% "json4s-ext"        % json4sVersion
   val jooq = "org.jooq"               % "jooq"              % jooqVersion
   val joda = "joda-time"              % "joda-time"         % jodaVersion
   val slf4jApi = "org.slf4j"          % "slf4j-api"         % slf4jVersion
@@ -38,6 +39,7 @@ libraryDependencies ++= Seq(
   dependencies.scalaj,
   dependencies.json4sNative,
   dependencies.json4sJackson,
+  dependencies.json4sExt,
   dependencies.jooq,
   dependencies.joda,
   dependencies.slf4jApi,
