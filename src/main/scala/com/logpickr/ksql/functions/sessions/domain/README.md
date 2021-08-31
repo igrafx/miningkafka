@@ -24,7 +24,8 @@ def logpickrSessions(
     ): util.List[Struct]
 ```
 
-Here, we take in input a collection of rows (where each row has some columns). Then we regroup the rows per groups (in function of the values of the columns specified by **groupSessionPattern**, where two rows having the same value for the specified columns will end up in the same group). And finally within each group we calculate sessions for some consecutive rows. To calculate the sessions, some rows correspond to the start of the sessions, others to the end, and rows in between just belong to the session.
+Here, we take in input a collection of rows (where each row has some columns). Then we regroup the rows per groups (in function of the values of the columns specified by **groupSessionPattern**, where two rows having the same value for the specified columns will end up in the same group). And finally within each group we calculate sessions for some consecutive rows. To calculate the sessions, some rows correspond to the start of the sessions, others to the end, and rows in between just belong to the session (a row corresponds to a start/end of a session according to whether or not the row matches the startSessionPattern/endSessionPattern defined by the user).
+Hence, groups are used to separate and reorganize the rows of the input collection. Each session is only calculated from the rows of a same group and correspond to a gathering of related events, with limits defined by the user.
 
 Additionaly, there are options to choose if we want to hash the sessionId created for each new session, and to choose if we ignore the sessions not having one row matching the descriptions given either for the start of a session or for the end of a session 
 

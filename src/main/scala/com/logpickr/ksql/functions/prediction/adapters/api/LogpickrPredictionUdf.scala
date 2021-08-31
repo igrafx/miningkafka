@@ -1,23 +1,13 @@
 package com.logpickr.ksql.functions.prediction.adapters.api
 
 import com.logpickr.ksql.functions.prediction.PredictionConstants
-import com.logpickr.ksql.functions.prediction.adapters.api.dtos.{
-  CasePredictionDto,
-  FinalProcessKeyPredictionDto,
-  PredictionConfidenceIntervalDto,
-  PredictionDto,
-  PredictionResponseDto,
-  PredictionStepDto,
-  PredictionStructs
-}
+import com.logpickr.ksql.functions.prediction.adapters.api.dtos._
 import com.logpickr.ksql.functions.prediction.adapters.services.LogpickrApiServiceImpl
-import com.logpickr.ksql.functions.prediction.domain.entities._
 import com.logpickr.ksql.functions.prediction.domain.entities.exceptions.{
   InvalidTokenException,
   NoMoreTryException,
   PredictionException
 }
-import com.logpickr.ksql.functions.prediction.domain.usecases.interfaces.LogpickrApiService
 import com.logpickr.ksql.functions.prediction.domain.usecases.PredictionUseCases
 import io.confluent.ksql.function.udf.{Udf, UdfDescription, UdfParameter}
 import org.apache.kafka.connect.data.Struct
@@ -85,6 +75,12 @@ class LogpickrPredictionUdf {
       case Failure(exception: IllegalArgumentException) =>
         log.error(
           s"The projectId argument does not correspond to UUID format",
+          exception
+        )
+        throw exception
+      case Failure(exception: Throwable) =>
+        log.error(
+          s"Unexpected exception. Can't retrieve prediction information for the caseIds $caseIds because of their projectId argument",
           exception
         )
         throw exception

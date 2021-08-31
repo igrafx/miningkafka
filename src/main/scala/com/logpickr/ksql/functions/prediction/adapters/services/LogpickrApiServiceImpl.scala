@@ -118,14 +118,13 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
   }
 
   private[services] def setCaseIdsForQuery(caseIds: Iterable[String]): String = {
-    val result: (String, Boolean) = caseIds.foldLeft("", false) { (acc: (String, Boolean), caseId: String) =>
-      if (acc._2) {
-        (s"${acc._1},$caseId", true)
+    caseIds.foldLeft("") { (acc: String, caseId: String) =>
+      if (acc.nonEmpty) {
+        s"$acc,$caseId"
       } else {
-        (s"caseIds[]=$caseId", true)
+        s"caseIds[]=$caseId"
       }
     }
-    result._1
   }
 
   @throws[PredictionException]

@@ -59,6 +59,12 @@ class LogpickrCaseEventsUdf {
           exception
         )
         throw CaseEventsException(exception.getMessage)
+      case Failure(exception: Throwable) =>
+        log.error(
+          s"Unexpected exception. Can't retrieve information for the caseId $caseId because of its projectId argument",
+          exception
+        )
+        throw CaseEventsException(exception.getMessage)
     }
 
     Try {
