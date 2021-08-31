@@ -1,34 +1,34 @@
 # UDF
 
-Projet regroupant les différentes UDF Logpickr qu'il est ensuite possible d'utiliser dans ksqlDB
+Project regrouping the different Logpickr UDF you can use in ksqlDB
 
-Pour déployer les UDFs voir le **CONTRIBUTING.md** 
+To deploy UDFs, please see the **CONTRIBUTING.md** file
 
-Liens vers la documentation des UDFs ksqlDB :
+Links towards the ksqlDB UDFs documentation :
 
 * https://docs.ksqldb.io/en/latest/reference/user-defined-functions/
 * https://docs.ksqldb.io/en/latest/how-to-guides/create-a-user-defined-function/
 
 ## UDF Transposition
 
-* nom dans ksqlDB : **logpickr_transposition**
+* name in ksqlDB : **logpickr_transposition**
 * package : **com.logpickr.ksql.functions.transposition.domain**
 
-UDTF transposant une ligne contenant plusieurs dates associées à des activités, en plusieurs lignes avec une date (ou période) liée à une activité
+UDTF transposing a line which contains multiple dates associated to activities, into multiple lines with one date (or period) linked to its activity
 
 ## UDF Case Events
 
-* nom dans ksqlDB : **logpickr_case_events**
+* name in ksqlDB : **logpickr_case_events**
 * package : **com.logpickr.ksql.functions.caseevents.domain**
 
-UDF permettant d'obtenir des informations liées à un caseId dans Druid
+UDF allowing to obtain caseId related information in Druid
 
 ## UDF Sessions
 
-* nom dans ksqlDB : **logpickr_sessions**
+* name in ksqlDB : **logpickr_sessions**
 * package : **com.logpickr.ksql.functions.sessions.domain**
 
-UDTF répartissant un ensemble de lignes en différentes sessions
+UDTF distributing a collection of lines into different sessions
 
 ## UDF Prediction
 

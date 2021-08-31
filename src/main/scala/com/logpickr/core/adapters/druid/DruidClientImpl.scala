@@ -101,12 +101,14 @@ class DruidClientImpl extends DruidClient {
         parsedResponse
       } else {
         val errorDescription = (parsedResponse \\ errorAttribute).extract[String]
-        log.error(s"$errorDescription for request: $jsonQuery")
+        log.error(
+          s"[UDF logpickr_case_events] Error in the Http Response : $errorDescription for the query : $jsonQuery"
+        )
         throw DruidException(errorDescription)
       }
     } recover {
       case exception =>
-        log.error("Problem with the Http Request", exception)
+        log.error(s"[UDF logpickr_case_events] Problem with the Http Request for the query $jsonQuery", exception)
         throw exception
     }
   }
