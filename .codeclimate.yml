@@ -1,0 +1,47 @@
+version: "2"
+
+plugins:
+  fixme:
+    enabled: true
+
+checks:
+  argument-count:
+    config:
+      threshold: 8
+  complex-logic:
+    config:
+      threshold: 5
+  file-lines:
+    config:
+      threshold: 600
+  method-complexity:
+    config:
+      threshold: 5
+  method-count:
+    config:
+      threshold: 30
+  method-lines:
+    config:
+      threshold: 50
+  nested-control-flow:
+    config:
+      threshold: 2
+  return-statements:
+    enabled: false
+  similar-code:
+    config:
+      threshold: 5
+  identical-code:
+    config:
+      threshold: 5
+
+exclude_patterns:
+  - ".gitlab/"
+  - ".idea/"
+  - ".metals/"
+  - ".vscode/"
+  - ".bsp"
+  - "project/"
+  - "target/"
+  - "**/target/"
+  - "**/test/"
