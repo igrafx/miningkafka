@@ -5,31 +5,32 @@ organizationName := "Logpickr"
 organizationHomepage := Some(url("https://www.logpickr.com"))
 
 lazy val dependencies = new {
-  private val kafkaVersion = "2.8.0"
-  private val ksqldbUdfVersion = "6.1.1"
+  private val kafkaVersion = "3.1.0"
+  private val ksqldbUdfVersion = "7.1.0"
   private val scalajVersion = "2.4.2"
-  private val json4sVersion = "3.6.11"
-  private val jooqVersion = "3.14.11"
+  private val json4sVersion = "4.0.5"
+  private val jooqVersion = "3.14.15"
   private val jodaVersion = "2.10.10"
-  private val slf4jVersion = "1.7.30"
-  private val apacheCodecVersion = "1.15"
-  private val scalatestVersion = "3.2.9"
-  private val scalaTestMockitoVersion = "3.2.9.0"
+  private val slf4jVersion = "1.7.36"
+  private val scalatestVersion = "3.2.11"
+  private val scalaTestMockitoVersion = "3.2.10.0"
+  private val nettyVersion = "4.1.68.Final"
 
-  val kafka = "org.apache.kafka"     %% "kafka"             % kafkaVersion
-  val kafkaApi = "org.apache.kafka"   % "connect-api"       % kafkaVersion
-  val ksqldbUdf = "io.confluent.ksql" % "ksqldb-udf"        % ksqldbUdfVersion exclude ("org.slf4j", "slf4j-log4j12")
-  val scalaj = "org.scalaj"          %% "scalaj-http"       % scalajVersion
-  val json4sNative = "org.json4s"    %% "json4s-native"     % json4sVersion
-  val json4sJackson = "org.json4s"   %% "json4s-jackson"    % json4sVersion
-  val json4sExt = "org.json4s"       %% "json4s-ext"        % json4sVersion
-  val jooq = "org.jooq"               % "jooq"              % jooqVersion
-  val joda = "joda-time"              % "joda-time"         % jodaVersion
-  val slf4jApi = "org.slf4j"          % "slf4j-api"         % slf4jVersion
-  val slf4jSimple = "org.slf4j"       % "slf4j-simple"      % slf4jVersion
-  val apacheCodec = "commons-codec"   % "commons-codec"     % apacheCodecVersion
-  val scalatest = "org.scalatest"    %% "scalatest-funspec" % scalatestVersion        % Test
-  val mockito = "org.scalatestplus"  %% "mockito-3-4"       % scalaTestMockitoVersion % Test
+  val kafka = "org.apache.kafka"     %% "kafka"                        % kafkaVersion
+  val kafkaApi = "org.apache.kafka"   % "connect-api"                  % kafkaVersion
+  val ksqldbUdf = "io.confluent.ksql" % "ksqldb-udf"                   % ksqldbUdfVersion exclude ("org.slf4j", "slf4j-log4j12")
+  val scalaj = "org.scalaj"          %% "scalaj-http"                  % scalajVersion
+  val json4sNative = "org.json4s"    %% "json4s-native"                % json4sVersion
+  val json4sJackson = "org.json4s"   %% "json4s-jackson"               % json4sVersion
+  val json4sExt = "org.json4s"       %% "json4s-ext"                   % json4sVersion
+  val jooq = "org.jooq"               % "jooq"                         % jooqVersion
+  val joda = "joda-time"              % "joda-time"                    % jodaVersion
+  val slf4jApi = "org.slf4j"          % "slf4j-api"                    % slf4jVersion
+  val slf4jSimple = "org.slf4j"       % "slf4j-simple"                 % slf4jVersion
+  val nettyHandler = "io.netty"       % "netty-handler"                % nettyVersion
+  val nettyTransport = "io.netty"     % "netty-transport-native-epoll" % nettyVersion
+  val scalatest = "org.scalatest"    %% "scalatest-funspec"            % scalatestVersion        % Test
+  val mockito = "org.scalatestplus"  %% "mockito-3-4"                  % scalaTestMockitoVersion % Test
 }
 
 libraryDependencies ++= Seq(
@@ -44,9 +45,13 @@ libraryDependencies ++= Seq(
   dependencies.joda,
   dependencies.slf4jApi,
   dependencies.slf4jSimple,
-  dependencies.apacheCodec,
   dependencies.scalatest,
   dependencies.mockito
+)
+
+dependencyOverrides ++= Seq(
+  dependencies.nettyHandler,
+  dependencies.nettyTransport
 )
 
 lazy val compilerOptionsWithWarnings = Seq(

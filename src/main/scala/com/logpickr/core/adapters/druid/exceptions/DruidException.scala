@@ -1,3 +1,5 @@
 package com.logpickr.core.adapters.druid.exceptions
 
-final case class DruidException(message: String) extends Exception(message)
+import com.logpickr.core.exceptions.SafeException
+
+final case class DruidException(message: String) extends SafeException(message)

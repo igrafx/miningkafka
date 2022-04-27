@@ -56,7 +56,10 @@ class PredictionUseCases(private val logpickrApiService: LogpickrApiService) {
       case exception: PredictionException =>
         throw exception
       case exception: Throwable =>
-        log.error(s"Unexpected exception while trying to send or retrieve a $predictionDescription", exception)
+        log.error(
+          s"Unexpected exception while trying to send or retrieve a $predictionDescription".replaceAll("[\r\n]", ""),
+          exception
+        )
         throw exception
     }
   }
@@ -73,7 +76,9 @@ class PredictionUseCases(private val logpickrApiService: LogpickrApiService) {
       predictionDescription: String
   ): Future[PredictionResponse] = {
     if (tryNumber <= 0) {
-      log.error(s"No more try, all prediction receptions have failed for the $predictionDescription")
+      log.error(
+        s"No more try, all prediction receptions have failed for the $predictionDescription".replaceAll("[\r\n]", "")
+      )
       throw NoMoreTryException(s"No more try to retrieve the $predictionDescription")
     }
     sleep(PredictionConstants.tryIntervalInMilliseconds)
@@ -84,7 +89,7 @@ class PredictionUseCases(private val logpickrApiService: LogpickrApiService) {
         case Some(predictions) => Future.successful(predictions)
         case None =>
           log.debug(
-            s"Failed to retrieve the $predictionDescription, ${tryNumber - 1} tries left"
+            s"Failed to retrieve the $predictionDescription, ${tryNumber - 1} tries left".replaceAll("[\r\n]", "")
           )
           pullPredictionResult(
             authUrl,
@@ -104,7 +109,8 @@ class PredictionUseCases(private val logpickrApiService: LogpickrApiService) {
         throw exception
       case exception: Throwable =>
         log.error(
-          s"Unexpected exception while trying to retrieve a prediction for the $predictionDescription",
+          s"Unexpected exception while trying to retrieve a prediction for the $predictionDescription"
+            .replaceAll("[\r\n]", ""),
           exception
         )
         throw exception

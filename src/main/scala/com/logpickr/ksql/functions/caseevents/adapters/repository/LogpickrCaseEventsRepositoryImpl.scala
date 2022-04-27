@@ -56,6 +56,7 @@ class LogpickrCaseEventsRepositoryImpl(private val druidClient: DruidClient = Dr
         case exception =>
           log.error(
             s"[UDF logpickr_case_events] Problem with the sql request used to get information for the caseId : $caseId"
+              .replaceAll("[\r\n]", "")
           )
           throw exception
       }

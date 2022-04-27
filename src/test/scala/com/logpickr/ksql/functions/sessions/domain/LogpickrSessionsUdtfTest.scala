@@ -3,13 +3,13 @@ package com.logpickr.ksql.functions.sessions.domain
 import com.logpickr.ksql.functions.sessions.Constants
 import com.logpickr.ksql.functions.sessions.domain.structs.Structs
 import core.UnitTestSpec
-import org.apache.commons.codec.digest.DigestUtils
 import org.apache.kafka.connect.data.Struct
 
 import java.nio.charset.StandardCharsets
 import java.util
+import java.util.UUID
 
-class LogpickrSessionsUdtfTest extends UnitTestSpec {
+final class LogpickrSessionsUdtfTest extends UnitTestSpec {
   val logpickrSessionsUdtf = new LogpickrSessionsUdtf()
 
   val listTest: util.List[String] = new util.ArrayList[String]()
@@ -501,7 +501,7 @@ class LogpickrSessionsUdtfTest extends UnitTestSpec {
         ".*;(.*);(.*);.*".r,
         isSessionIdHash = true
       )
-      assert(DigestUtils.md5Hex("1appTest1".getBytes(StandardCharsets.UTF_8)) == res)
+      assert(UUID.nameUUIDFromBytes("1appTest1".getBytes(StandardCharsets.UTF_8)).toString == res)
     }
 
     it(
@@ -516,7 +516,7 @@ class LogpickrSessionsUdtfTest extends UnitTestSpec {
 
       val res2 =
         logpickrSessionsUdtf.getSessionId("2020-06-16T04;1;appTest1;Start", ".*;.*;(.*);.*".r, isSessionIdHash = true)
-      assert(DigestUtils.md5Hex("appTest1".getBytes(StandardCharsets.UTF_8)) == res2)
+      assert(UUID.nameUUIDFromBytes("appTest1".getBytes(StandardCharsets.UTF_8)).toString == res2)
     }
 
     it(
