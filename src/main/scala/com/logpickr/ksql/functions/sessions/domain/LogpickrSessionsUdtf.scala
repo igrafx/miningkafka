@@ -10,9 +10,9 @@ import org.slf4j.{Logger, LoggerFactory}
 import scala.jdk.CollectionConverters._
 import java.util
 import scala.util.matching.Regex
-import org.apache.commons.codec.digest.DigestUtils
 
 import java.nio.charset.StandardCharsets
+import java.util.UUID
 import java.util.regex.PatternSyntaxException
 import scala.util.{Failure, Success, Try}
 
@@ -146,7 +146,7 @@ class LogpickrSessionsUdtf {
           ""
       }
     if (isSessionIdHash && (sessionIdConcat != "")) {
-      DigestUtils.md5Hex(sessionIdConcat.getBytes(StandardCharsets.UTF_8))
+      UUID.nameUUIDFromBytes(sessionIdConcat.getBytes(StandardCharsets.UTF_8)).toString
     } else {
       sessionIdConcat
     }

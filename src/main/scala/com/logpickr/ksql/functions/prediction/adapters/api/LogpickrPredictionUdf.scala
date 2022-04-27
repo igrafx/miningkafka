@@ -80,7 +80,8 @@ class LogpickrPredictionUdf {
         throw exception
       case Failure(exception: Throwable) =>
         log.error(
-          s"Unexpected exception. Can't retrieve prediction information for the caseIds $caseIds because of their projectId argument",
+          s"Unexpected exception. Can't retrieve prediction information for the caseIds $caseIds because of their projectId argument"
+            .replaceAll("[\r\n]", ""),
           exception
         )
         throw exception

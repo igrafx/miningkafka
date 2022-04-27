@@ -55,13 +55,15 @@ class LogpickrCaseEventsUdf {
       case Success(value) => value
       case Failure(exception: IllegalArgumentException) =>
         log.error(
-          s"Couldn't retrieve information about the caseId $caseId because the projectId argument does not correspond to UUID format",
+          s"Couldn't retrieve information about the caseId $caseId because the projectId argument does not correspond to UUID format"
+            .replaceAll("[\r\n]", ""),
           exception
         )
         throw CaseEventsException(exception.getMessage)
       case Failure(exception: Throwable) =>
         log.error(
-          s"Unexpected exception. Can't retrieve information for the caseId $caseId because of its projectId argument",
+          s"Unexpected exception. Can't retrieve information for the caseId $caseId because of its projectId argument"
+            .replaceAll("[\r\n]", ""),
           exception
         )
         throw CaseEventsException(exception.getMessage)
@@ -79,7 +81,7 @@ class LogpickrCaseEventsUdf {
     } match {
       case Success(result) => result
       case Failure(exception) =>
-        log.error(s"Couldn't retrieve information about the caseId $caseId", exception)
+        log.error(s"Couldn't retrieve information about the caseId $caseId".replaceAll("[\r\n]", ""), exception)
         throw CaseEventsException(exception.getMessage)
     }
   }

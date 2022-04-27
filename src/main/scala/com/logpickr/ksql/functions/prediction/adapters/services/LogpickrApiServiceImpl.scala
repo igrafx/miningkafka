@@ -45,7 +45,9 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
       resultLogin.code match {
         case 200 =>
           val token = (parse(resultLogin.body) \\ "access_token").extract[String]
-          log.debug(s"Token for the $predictionDescription has been successfully retrieved : $token")
+          log.debug(
+            s"Token for the $predictionDescription has been successfully retrieved : $token".replaceAll("[\r\n]", "")
+          )
           token
         case _ =>
           throw InvalidTokenException(
@@ -55,13 +57,15 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
     }.recover {
       case tokenException: InvalidTokenException =>
         log.error(
-          s"InvalidTokenException : Issue with the Http Request for authentication, can't retrieve the $predictionDescription",
+          s"InvalidTokenException : Issue with the Http Request for authentication, can't retrieve the $predictionDescription"
+            .replaceAll("[\r\n]", ""),
           tokenException
         )
         throw tokenException
       case exception =>
         log.error(
-          s"Unexpected exception while trying to retrieve a token via the Logpickr authentication API, hence can't retrieve either the $predictionDescription",
+          s"Unexpected exception while trying to retrieve a token via the Logpickr authentication API, hence can't retrieve either the $predictionDescription"
+            .replaceAll("[\r\n]", ""),
           exception
         )
         throw InvalidTokenException(exception.getMessage)
@@ -86,7 +90,7 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
     }.map { resultSendPrediction =>
       resultSendPrediction.code match {
         case 202 =>
-          log.debug(s"The $predictionDescription has been performed successfully !")
+          log.debug(s"The $predictionDescription has been performed successfully !".replaceAll("[\r\n]", ""))
           (parse(resultSendPrediction.body) \\ "message").extract[String]
         case 404 =>
           throw PredictionException(
@@ -104,13 +108,13 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
     }.recover {
       case predictionException: PredictionException =>
         log.error(
-          s"Issue with Http Request launching a $predictionDescription",
+          s"Issue with Http Request launching a $predictionDescription".replaceAll("[\r\n]", ""),
           predictionException
         )
         throw predictionException
       case exception =>
         log.error(
-          s"Unexpected exception with the Http Request launching a $predictionDescription",
+          s"Unexpected exception with the Http Request launching a $predictionDescription".replaceAll("[\r\n]", ""),
           exception
         )
         throw PredictionException(exception.getMessage)
@@ -142,11 +146,12 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
     }.map { resultPrediction =>
       resultPrediction.code match {
         case 200 =>
-          log.info(s"The $predictionDescription has been successfully retrieved !")
+          log.info(s"The $predictionDescription has been successfully retrieved !".replaceAll("[\r\n]", ""))
           Some(parse(resultPrediction.body).extract[PredictionResponseDto].toPredictionResponse)
         case 202 =>
           log.debug(
             s"$predictionDescription not ready, Http Response : ${resultPrediction.code}, ${resultPrediction.body}"
+              .replaceAll("[\r\n]", "")
           )
           None
         case 404 =>
@@ -161,13 +166,14 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
     }.recover {
       case exception: PredictionException =>
         log.error(
-          s"Issue while retrieving from the Logpickr API a $predictionDescription",
+          s"Issue while retrieving from the Logpickr API a $predictionDescription".replaceAll("[\r\n]", ""),
           exception
         )
         throw exception
       case exception =>
         log.error(
-          s"Unexpected exception with the Http Request retrieving prediction information from the Logpickr API for the $predictionDescription",
+          s"Unexpected exception with the Http Request retrieving prediction information from the Logpickr API for the $predictionDescription"
+            .replaceAll("[\r\n]", ""),
           exception
         )
         throw PredictionException(exception.getMessage)
