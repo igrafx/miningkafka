@@ -1,0 +1,42 @@
+.cache_template: &cache_definition
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+      - "$CI_PROJECT_DIR/.ivy2"
+
+stages:
+  - test
+  - build
+
+include:
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
+
+test:
+  stage: test
+  image: "igrafx.azurecr.io/logpickr/sbt-test"
+  services:
+    - docker:19.03.12-dind
+  <<: *cache_definition
+  script:
+    - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverage test coverageReport
+    - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverageAggregate
+  only:
+    - merge_requests
+
+build:
+  stage: build
+  image: "igrafx.azurecr.io/logpickr/sbt-test"
+  services:
+    - docker:19.03.12-dind
+  <<: *cache_definition
+  script:
+    - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ clean assembly
+  artifacts:
+    paths:
+      - artifacts/
+  only:
+    - tags
+
+
