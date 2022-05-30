@@ -53,8 +53,11 @@ build:
   <<: *cache_definition
   script:
     - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ clean assembly
+    - mkdir -p artifacts
+    - find . -iname 'logpickr-ksqldb-udf-assembly-*.jar' -exec cp '{}' artifacts/ \;
   artifacts:
     paths:
       - artifacts/
   only:
     - tags
+    - /^release/.*$/
