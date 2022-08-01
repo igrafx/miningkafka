@@ -1,3 +1,11 @@
+# 2.13.0 (2022-08-01)
+
+
+### Features
+
+* add jobs to deploy UDF to qa or demo ([7363371](https://gitlab.com/igrafx/logpickr/logpickr-ksqldb-udf/commit/73633712b2dcd6097bfbb2ac09e0687f1b3933fc))
+
+
 # 2.12.0 (2022-06-30)
 
 

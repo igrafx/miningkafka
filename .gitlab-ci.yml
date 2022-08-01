@@ -15,6 +15,7 @@
 stages:
   - test
   - build
+  - deploy
 
 include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
@@ -55,9 +56,39 @@ build:
     - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ clean assembly
     - mkdir -p artifacts
     - find . -iname 'logpickr-ksqldb-udf-assembly-*.jar' -exec cp '{}' artifacts/ \;
+    - echo "BUILD_JOB_ID=${CI_JOB_ID}" >> build.env
   artifacts:
     paths:
       - artifacts/
+    reports:
+      dotenv: build.env
   only:
     - tags
     - /^release/.*$/
+
+.abstract_native_deploy:
+  stage: deploy
+  image: "igrafx.azurecr.io/logpickr-gitlab-ansible-deploy"
+  dependencies:
+    - build
+  only:
+    - tags
+    - /^release/.*$/
+  before_script:
+    # GitLab overrides the working directory, so it's necessary to move to docker container WORKDIR
+    # https://docs.gitlab.com/ee/ci/docker/using_docker_images.html#where-scripts-are-executed
+    - cd /deploy_ansible
+    # https://docs.gitlab.com/ee/ci/ssh_keys/#ssh-keys-when-using-the-docker-executor
+    - eval $(ssh-agent -s)
+    - echo "${SSH_PRIVATE_KEY}" | tr -d '\r' | ssh-add -
+  when: manual
+
+deploy-qa_core:
+  extends: .abstract_native_deploy
+  script:
+    - ansible-playbook update_udf.yml -e target_ansible_hosts="qa_core" -e target_job_id="${BUILD_JOB_ID}"
+
+deploy-demo_core:
+  extends: .abstract_native_deploy
+  script:
+    - ansible-playbook update_udf.yml -e target_ansible_hosts="demo_core" -e target_job_id="${BUILD_JOB_ID}"
