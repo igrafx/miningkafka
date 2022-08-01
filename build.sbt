@@ -1,20 +1,20 @@
 scalaVersion := "2.13.5"
-version := "2.12.0"
+version := "2.13.0"
 organization := "com.logpickr"
 organizationName := "Logpickr"
 organizationHomepage := Some(url("https://www.logpickr.com"))
 
 lazy val dependencies = new {
-  private val kafkaVersion = "3.1.0"
+  private val kafkaVersion = "3.1.1"
   private val ksqldbUdfVersion = "7.1.0"
   private val scalajVersion = "2.4.2"
   private val json4sVersion = "4.0.5"
   private val jooqVersion = "3.14.15"
-  private val jodaVersion = "2.10.10"
+  private val jodaVersion = "2.10.14"
   private val slf4jVersion = "1.7.36"
   private val scalatestVersion = "3.2.11"
   private val scalaTestMockitoVersion = "3.2.10.0"
-  private val nettyVersion = "4.1.68.Final"
+  private val nettyVersion = "4.1.77.Final"
 
   val kafka = "org.apache.kafka"     %% "kafka"                        % kafkaVersion
   val kafkaApi = "org.apache.kafka"   % "connect-api"                  % kafkaVersion
