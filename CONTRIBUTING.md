@@ -16,7 +16,7 @@ sbt assembly
 
 The **jar** contains all the UDFs of the project. It means that you can use every UDF of the project in ksqlDB with this jar.
 
-Then, place the newly created **.jar** (which is in the **target/scala-2.13** repository) in the **kafka/extensions/** repository of Logpickr Liveconnect project. If this repository doesn't exist, create it and check that the following lines are in the **ksqldb-server** of the docker-compose.yml :
+Then, place the newly created **.jar** (which is in the **target/scala-2.13** repository) in the **docker-compose/extensions/** repository of Logpickr Liveconnect project. If this repository doesn't exist, create it and check that the following lines are in the **ksqldb-server** of the docker-compose.yml :
 
 ``` 
 ksqldb-server:
@@ -28,16 +28,13 @@ ksqldb-server:
       KSQL_KSQL_EXTENSION_DIR: "/opt/ksqldb-udfs"
 ```
 
-We then launch the infrastucture from the **kafka/** repository of Liveconnect with the commands :
+We then launch the infrastucture from the **docker-compose/** repository of Liveconnect with the commands :
 
 ``` 
-docker-compose up -d
-cd ../traefik
-docker-compose up -d
+make liveconnect
 ```
-*(or only the first one if your docker-compose doesn't use traefik)*
 
-We can then connect to the ksqlDB CLI, from the **kafka/** repository of Liveconnect, with the command :
+We can then connect to the ksqlDB CLI, from the **docker-compose/** repository of Liveconnect, with the command :
 
 ``` 
 docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
