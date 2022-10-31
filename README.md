@@ -14,25 +14,25 @@ Links towards the ksqlDB UDFs documentation :
 * name in ksqlDB : **logpickr_transposition**
 * package : **com.logpickr.ksql.functions.transposition.domain**
 
-UDTF transposing a line which contains multiple dates associated to activities, into multiple lines with one date (or period) linked to its activity
+UDTF transposing a line which contains multiple dates associated to activities, into multiple lines with one date (or period) linked to its activity. Read more [here](./src/main/scala/com/logpickr/ksql/functions/transposition/domain/README.md).
 
 ## UDF Case Events
 
 * name in ksqlDB : **logpickr_case_events**
 * package : **com.logpickr.ksql.functions.caseevents.domain**
 
-UDF allowing to obtain caseId related information in Druid
+UDF allowing to obtain caseId related information in Druid. Read more [here](./src/main/scala/com/logpickr/ksql/functions/caseevents/domain/README.md).
 
 ## UDF Sessions
 
 * name in ksqlDB : **logpickr_sessions**
 * package : **com.logpickr.ksql.functions.sessions.domain**
 
-UDTF distributing a collection of lines into different sessions
+UDTF distributing a collection of lines into different sessions. Read more [here](./src/main/scala/com/logpickr/ksql/functions/sessions/domain/README.md).
 
 ## UDF Prediction
 
 * name in ksqlDB : **logpickr_prediction**
 * package : **com.logpickr.ksql.functions.prediction.adapters.api**
   
-UDF allowing retrieving prediction information on given caseIds belonging to a Logpickr project
+UDF allowing retrieving prediction information on given caseIds belonging to a Logpickr project. Read more [here](./src/main/scala/com/logpickr/ksql/functions/prediction/README.md).

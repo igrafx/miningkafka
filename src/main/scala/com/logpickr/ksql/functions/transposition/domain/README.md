@@ -325,9 +325,9 @@ Concerning the behavior of the UDF, and this for both variation, there is a need
 
 For instance if the initial row corresponds to :
 
-| Case   | Step 1     | Step 2     | Step 3     | Step 4     | Step 5     | Total Price                                                                               |
-| -------|:----------:| :---------:|:----------:|:----------:|:----------:| -----------:
-| case 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 | 240        |
+| Case   | Step 1     | Step 2     | Step 3     | Step 4     | Step 5     | Total Price    |
+| -------|:----------:| :---------:|:----------:|:----------:|:----------:|----------------|
+| case 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 | 240            |
 
 An information is given about the Total Price related to the process. In case of utilisation of the UDF (for instance with the first variation), if the created STREAMs keep the information of the Total Price column, as with the following example :
 
