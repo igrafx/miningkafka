@@ -28,8 +28,7 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
       predictionDescription: String
   ): Future[String] = {
     val form: Seq[(String, String)] = Seq(
-      ("grant_type", "urn:ietf:params:oauth:grant-type:uma-ticket"),
-      ("audience", workGroupId),
+      ("grant_type", "client_credentials"),
       ("client_id", workGroupId),
       ("client_secret", workGroupKey)
     )
@@ -82,7 +81,7 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
   ): Future[String] = {
     Future {
       Http(s"$apiUrl/pub/project/$projectId/prediction?${setCaseIdsForQuery(caseIds)}")
-        .header(PredictionConstants.tokenHeader, token)
+        .header(PredictionConstants.tokenHeader, s"Bearer $token")
         .header("content-type", "application/json")
         .postForm
         .option(HttpOptions.readTimeout(PredictionConstants.timeoutApiCallValueInMilliSeconds))
@@ -139,7 +138,7 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
   ): Future[Option[PredictionResponse]] = {
     Future {
       Http(predictionUrl)
-        .header(PredictionConstants.tokenHeader, token)
+        .header(PredictionConstants.tokenHeader, s"Bearer $token")
         .header("content-type", "application/json")
         .option(HttpOptions.readTimeout(PredictionConstants.timeoutApiCallValueInMilliSeconds))
         .asString

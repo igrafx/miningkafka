@@ -5,7 +5,7 @@ object PredictionConstants {
   val timeoutApiCallValueInMilliSeconds = 300000
   val tryIntervalInMilliseconds = 1000 // must be > 0
 
-  val tokenHeader = "X-Logpickr-API-Token"
+  val tokenHeader = "Authorization"
 
   // names of structures' fields, if you want to change one name, please also change it in the PredictionStructs.STRUCT_OUTPUT_SCHEMA_DESCRIPTOR and in the README where the following variables can't be used
   val predictionId = "PREDICTION_ID"
