@@ -34,7 +34,7 @@ class LogpickrApiServiceImpl extends LogpickrApiService {
     )
 
     Future {
-      Http(s"$authUrl/auth/realms/logpickr/protocol/openid-connect/token")
+      Http(s"$authUrl/realms/logpickr/protocol/openid-connect/token")
         .postForm(form)
         .header("Content-Type", "application/json")
         .header("Charset", StandardCharsets.UTF_8.name())
