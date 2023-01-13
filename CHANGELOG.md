@@ -1,3 +1,11 @@
+# 2.18.0 (2023-01-13)
+
+
+
+# 2.17.0 (2022-12-16)
+
+* adaptation to new logpickr public api authentication
+
 # 2.16.0 (2022-10-31)
 
 
