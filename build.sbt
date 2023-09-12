@@ -1,5 +1,5 @@
 scalaVersion := "2.13.5"
-version := "2.25.0"
+version := "2.26.0-rc.1"
 organization := "com.logpickr"
 organizationName := "Logpickr"
 organizationHomepage := Some(url("https://www.logpickr.com"))
