@@ -14,20 +14,22 @@ lazy val dependencies = new {
   private val scalatestVersion = "3.2.11"
   private val scalaTestMockitoVersion = "3.2.10.0"
   private val nettyVersion = "4.1.77.Final"
+  private val jacksonVersion = "2.15.3"
 
-  val kafka = "org.apache.kafka"     %% "kafka"                        % kafkaVersion
-  val kafkaApi = "org.apache.kafka"   % "connect-api"                  % kafkaVersion
-  val ksqldbUdf = "io.confluent.ksql" % "ksqldb-udf"                   % ksqldbUdfVersion
-  val scalaj = "org.scalaj"          %% "scalaj-http"                  % scalajVersion
-  val json4sNative = "org.json4s"    %% "json4s-native"                % json4sVersion
-  val json4sJackson = "org.json4s"   %% "json4s-jackson"               % json4sVersion
-  val json4sExt = "org.json4s"       %% "json4s-ext"                   % json4sVersion
-  val jooq = "org.jooq"               % "jooq"                         % jooqVersion
-  val joda = "joda-time"              % "joda-time"                    % jodaVersion
-  val nettyHandler = "io.netty"       % "netty-handler"                % nettyVersion
-  val nettyTransport = "io.netty"     % "netty-transport-native-epoll" % nettyVersion
-  val scalatest = "org.scalatest"    %% "scalatest-funspec"            % scalatestVersion        % Test
-  val mockito = "org.scalatestplus"  %% "mockito-3-4"                  % scalaTestMockitoVersion % Test
+  val kafka = "org.apache.kafka"            %% "kafka"                        % kafkaVersion
+  val kafkaApi = "org.apache.kafka"          % "connect-api"                  % kafkaVersion
+  val ksqldbUdf = "io.confluent.ksql"        % "ksqldb-udf"                   % ksqldbUdfVersion
+  val scalaj = "org.scalaj"                 %% "scalaj-http"                  % scalajVersion
+  val json4sNative = "org.json4s"           %% "json4s-native"                % json4sVersion
+  val json4sJackson = "org.json4s"          %% "json4s-jackson"               % json4sVersion
+  val json4sExt = "org.json4s"              %% "json4s-ext"                   % json4sVersion
+  val jooq = "org.jooq"                      % "jooq"                         % jooqVersion
+  val joda = "joda-time"                     % "joda-time"                    % jodaVersion
+  val nettyHandler = "io.netty"              % "netty-handler"                % nettyVersion
+  val nettyTransport = "io.netty"            % "netty-transport-native-epoll" % nettyVersion
+  val jackson = "com.fasterxml.jackson.core" % "jackson-databind"             % jacksonVersion
+  val scalatest = "org.scalatest"           %% "scalatest-funspec"            % scalatestVersion        % Test
+  val mockito = "org.scalatestplus"         %% "mockito-3-4"                  % scalaTestMockitoVersion % Test
 }
 
 libraryDependencies ++= Seq(
@@ -46,7 +48,8 @@ libraryDependencies ++= Seq(
 
 dependencyOverrides ++= Seq(
   dependencies.nettyHandler,
-  dependencies.nettyTransport
+  dependencies.nettyTransport,
+  dependencies.jackson
 )
 
 lazy val compilerOptionsWithWarnings = Seq(
