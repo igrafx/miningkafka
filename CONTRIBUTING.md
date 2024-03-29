@@ -28,7 +28,7 @@ ksqldb-server:
       KSQL_KSQL_EXTENSION_DIR: "/opt/ksqldb-udfs"
 ```
 
-We then launch the infrastucture from the **docker-compose/** repository of Liveconnect with the commands :
+We then launch the infrastructure from the **docker-compose/** repository of Liveconnect with the commands :
 
 ``` 
 make liveconnect

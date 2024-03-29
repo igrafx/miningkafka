@@ -5,8 +5,8 @@ organizationName := "Logpickr"
 organizationHomepage := Some(url("https://www.logpickr.com"))
 
 lazy val dependencies = new {
-  private val kafkaVersion = "3.4.0"
-  private val ksqldbUdfVersion = "7.4.0"
+  private val kafkaVersion = "3.4.1"
+  private val ksqldbUdfVersion = "7.4.4"
   private val scalajVersion = "2.4.2"
   private val json4sVersion = "4.0.5"
   private val jooqVersion = "3.14.15"
