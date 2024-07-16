@@ -1,7 +1,7 @@
 import sbtassembly.MergeStrategy
 
 scalaVersion := "2.13.5"
-version := "2.33.0"
+version := "2.34.0-rc.1"
 organization := "com.logpickr"
 organizationName := "Logpickr"
 organizationHomepage := Some(url("https://www.logpickr.com"))
