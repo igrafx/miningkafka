@@ -2,9 +2,9 @@ import sbtassembly.MergeStrategy
 
 scalaVersion := "2.13.5"
 version := "2.35.0"
-organization := "com.logpickr"
-organizationName := "Logpickr"
-organizationHomepage := Some(url("https://www.logpickr.com"))
+organization := "com.igrafx"
+organizationName := "iGrafx"
+organizationHomepage := Some(url("https://www.igrafx.com/"))
 
 lazy val dependencies = new {
   private val kafkaVersion = "3.4.1"
