@@ -1,0 +1,12 @@
+logs*
+data
+backups
+.*
+redis
+hdfs
+test
+screenshots
+conf/druid/export-metadata
+conf/liveconnect/sources/
+conf/ignite/libs/*.jar
+conf/liveconnect/extensions/*.jar
