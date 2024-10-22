@@ -1,0 +1,69 @@
+package com.igrafx.ksql.functions.caseevents.adapters.repository
+
+import com.igrafx.core.adapters.druid.DruidClientInstance
+import com.igrafx.core.adapters.druid.exceptions.{DruidException, UnknownDruidSqlTypeException}
+import com.igrafx.core.adapters.druid.interfaces.DruidClient
+import com.igrafx.ksql.functions.caseevents.adapters.repository.tables.VertexTable.{
+  __time,
+  caseid,
+  enddate,
+  getTable,
+  vertex_name
+}
+import com.igrafx.ksql.functions.caseevents.adapters.repository.dtos.CaseEventsResponseInformationDto
+import com.igrafx.ksql.functions.caseevents.domain.entities.CaseEventsResponseInformation
+import com.igrafx.ksql.functions.caseevents.domain.interfaces.IGrafxCaseEventsRepository
+import org.jooq.impl.DSL.select
+import org.json4s.{DefaultFormats, MappingException}
+import org.slf4j.{Logger, LoggerFactory}
+import scalaj.http.Base64
+
+import java.util.UUID
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
+
+class IGrafxCaseEventsRepositoryImpl(private val druidClient: DruidClient = DruidClientInstance.druidClient)
+    extends IGrafxCaseEventsRepository {
+  private val log: Logger = LoggerFactory.getLogger(getClass)
+  implicit private val formats: DefaultFormats.type = org.json4s.DefaultFormats
+
+  @throws[UnknownDruidSqlTypeException]
+  @throws[DruidException]
+  @throws[InterruptedException]
+  @throws[concurrent.TimeoutException]
+  @throws[IllegalArgumentException]
+  @throws[MappingException]
+  def getCaseIdInformation(
+      caseId: String,
+      projectUuid: UUID,
+      workgroupId: String,
+      workgroupKey: String,
+      host: String,
+      port: String
+  ): List[CaseEventsResponseInformation] = {
+    val query = (
+      // format: off
+      select(__time as CaseEventsResponseInformationDto.startDateAlias, enddate as CaseEventsResponseInformationDto.endDateAlias, vertex_name as CaseEventsResponseInformationDto.vertexNameAlias)
+        from getTable(projectUuid)
+        where vertex_name.isNotNull and caseid.eq(s"$caseId")
+      // format: on
+    )
+    val basicAuth = Base64.encodeString(s"$workgroupId:$workgroupKey")
+
+    def sqlQueryFuture =
+      druidClient.sendSqlQuery(query, basicAuth, host, port).recover {
+        case exception =>
+          log.error(
+            s"[UDF igrafx_case_events] Problem with the sql request used to get information for the caseId : $caseId"
+              .replaceAll("[\r\n]", "")
+          )
+          throw exception
+      }
+
+    val response: List[CaseEventsResponseInformationDto] = {
+      Await.result(sqlQueryFuture, 10 seconds).children.map(_.extract[CaseEventsResponseInformationDto])
+    }
+    response.map(_.toCaseEventsResponseInformation)
+  }
+}
