@@ -1,0 +1,13 @@
+data/
+extensions/
+conf/dbt/projects/dbt_modules
+conf/dbt/projects/target
+conf/dbt/projects/logs
+conf/dbt/projects/snapshots
+conf/dbt/projects/macros
+conf/dbt/projects/data
+conf/dbt/projects/analysis
+conf/dbt/profiles/.user.yml
+aggregation-sink-igrafx/
+notebooks/.ipynb_checkpoints/
+sources/snow_jira.csv/
