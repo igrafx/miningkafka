@@ -1,0 +1,67 @@
+.cache_template: &cache_definition
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+      - "$CI_PROJECT_DIR/.ivy2"
+
+.security_and_quality_rules_template: &security_and_quality_rules
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH =~ /^release.*/
+    - if: $CI_COMMIT_TAG
+
+stages:
+  - test
+  - build
+
+include:
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Code-Quality.gitlab-ci.yml
+
+code_quality:
+  <<: *security_and_quality_rules
+  after_script:
+    - cat gl-code-quality-report.json | docker run -i stedolan/jq -c 'map({description,fingerprint,location,severity})|unique_by({fingerprint})' > tmp.json && mv tmp.json gl-code-quality-report.json
+
+gemnasium-maven-dependency_scanning:
+  <<: *security_and_quality_rules
+
+spotbugs-sast:
+  <<: *security_and_quality_rules
+
+test:
+  stage: test
+  image: "igrafx.azurecr.io/logpickr/sbt-test"
+  services:
+    - docker:19.03.12-dind
+  <<: *cache_definition
+  script:
+    - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverage test coverageReport
+    - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverageAggregate
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: target/scala-2.13/coverage-report/cobertura.xml
+      junit: "*/target/test-reports/TEST-*.xml"
+    expire_in: 2 days
+  coverage: '/Coverage was \[([^%]+)\]/'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+build:
+  stage: build
+  image: "igrafx.azurecr.io/logpickr/sbt-test"
+  services:
+    - docker:19.03.12-dind
+  <<: *cache_definition
+  script:
+    - sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ clean assembly
+  artifacts:
+    paths:
+      - artifacts/
+  only:
+    - tags
