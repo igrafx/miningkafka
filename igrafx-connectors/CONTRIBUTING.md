@@ -102,12 +102,4 @@ In the event of an addition/suppression of Worker, the Tasks can be rebalanced a
 
 In the event of an addition/suppression of Tasks, the partitions can be rebalanced et redistributed on the new number of Tasks (Partition rebalance)
 
-### Version Commit
-
-* modify the version number related to the connector in the build.sbt file and in the function **version()** present in the Connector's class
-* git fetch --all --tags
-* generate the changelogs :
-  * if needed install conventional-changelog-cli with the command : *npm install -g conventional-changelog-cli* or *sudo npm install -g conventional-changelog-cli*
-  * at the root of the project, launch the command : *conventional-changelog -p angular -i CHANGELOG.md -s* (to keep the existing changelogs) or *conventional-changelog -p angular -i CHANGELOG.md -s -r 0* (to suppress the existing changelogs)
-* Check that a CHANGELOG.md file has been generated at the root of the project, and that it contains the changelogs of the version
 

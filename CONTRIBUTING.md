@@ -211,7 +211,11 @@ Thank you for contributing!
 ## Tag and Release
 To tag a version of the project, create a branch for the release. Change all the version instances in the project.
 
-Then, make sure to use the following command, where ``version number`` is the version number you want to tag.:
+The version number related to the **UDFs** should be changed in the respective ``build.sbt`` file.
+
+The version number related to the **Connectors** should be changed in the respective ``build.sbt`` file and in the function ``version()`` present in the Connector's class.
+
+Then, make sure to use the following command, where ``version number`` is the version number you want to tag:
 ````bash
 git tag <version number>
 ````
@@ -222,7 +226,7 @@ git push origin --tags
 
 This will push the tag to the github repository.
 
-Finally, you can create a release and write its release notes within github.
+Finally, you can create a release and write its release notes including changes within github.
 Always show with what platform version the project is compatible.
 
 ## Styleguide
