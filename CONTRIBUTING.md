@@ -25,6 +25,7 @@ and give an overall better experience to all parties involved. We appreciate you
 - [Submitting a Pull Request](#submitting-a-pull-request)
 - [Your First Code Contribution](#your-first-code-contribution)
 - [Improving The Documentation](#improving-the-documentation)
+- [Tag and Release](#tag-and-release)
 - [Styleguide](#styleguide)
 - [Git Commit Guidelines](#git-commit-guidelines)
 - [License](#license)
@@ -206,6 +207,23 @@ Thank you for contributing!
 - When contributing to documentation, use Markdown syntax for formatting. You can refer to the [Markdown Guide](https://www.markdownguide.org/basic-syntax/) for help.
 - Use clear and concise language. Write documentation that is easy to understand, providing clear explanations and examples where necessary.
 - Keep the documentation up to date. If you make changes to the code that affect the functionality or usage, ensure that the documentation reflects those changes.
+
+## Tag and Release
+To tag a version of the project, create a branch for the release. Change all the version instances in the project.
+
+Then, make sure to use the following command, where ``version number`` is the version number you want to tag.:
+````bash
+git tag <version number>
+````
+To push the tag, use the following command:
+````bash
+git push origin --tags
+````
+
+This will push the tag to the github repository.
+
+Finally, you can create a release and write its release notes within github.
+Always show with what platform version the project is compatible.
 
 ## Styleguide
 
