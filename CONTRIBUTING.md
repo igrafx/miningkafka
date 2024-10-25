@@ -28,7 +28,7 @@ and give an overall better experience to all parties involved. We appreciate you
 - [Tag and Release](#tag-and-release)
 - [Styleguide](#styleguide)
 - [Git Commit Guidelines](#git-commit-guidelines)
-- [License](#license) 
+- [License](#license)
 
 ## How Can I Contribute?
 
