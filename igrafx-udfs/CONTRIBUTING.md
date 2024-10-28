@@ -48,11 +48,3 @@ SHOW FUNCTIONS;
 
 For more information on a particular UDF, see its associated README
 
-### Version Commit
-
-* modify the version number related to the udfs in the build.sbt file
-* git fetch --all --tags
-* generate the changelogs :
-    * if needed install conventional-changelog-cli with the command : *npm install -g conventional-changelog-cli* or *sudo npm install -g conventional-changelog-cli*
-    * at the root of the project, launch the command : *conventional-changelog -p angular -i CHANGELOG.md -s* (to keep the existing changelogs) or *conventional-changelog -p angular -i CHANGELOG.md -s -r 0* (to suppress the existing changelogs)
-* Check that a CHANGELOG.md file has been generated at the root of the project, and that it contains the changelogs of the version
