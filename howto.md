@@ -62,6 +62,9 @@ The aggregation is triggered based on several thresholds:
 * **Timeout:** After a certain period since the last aggregation was sent, the current aggregated data is pushed to Kafka, even if the element count threshold hasn't been met.
 * **Retention:** This threshold is governed by the **retention.ms** configuration in the source Kafka topic. It is not set by the user in the connector’s properties but can impact data retention within the aggregation window. See the Retention section below for more details.
 
+>**Note**: The aggregation schema is obtained from the Kafka output topic specified by the **topicOut** property. Therefore, this topic’s schema must be created before any data is sent to the connector.
+
+
 #### Connector Properties
 
 To set up the connector, specify the following properties (example values provided):
@@ -101,26 +104,6 @@ The other properties can be customized based on your requirements:
 * **value.converter.schema.registry.url**: URL for the Kafka Schema Registry.
 
 For more information on regular expressions used in **threshold.valuePattern**, refer to [this regex guide](https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285).
-
-### Offset Management
-
-Offset management is handled in the code by the **PartitionTracker** class. Each partition of a topic specified in the **topics** property has an associated **PartitionTracker**, 
-ensuring that **aggregation is only performed on data coming from the same partition**.
-
-The **PartitionTracker** maintains and uses three types of offsets:
-
-* **Processed Offset**: Tracks the offset of the most recent record received for the relevant partition. This is managed by the `Put` function within the `AggregationSinkTask`.
-* **Flushed Offset**: Represents the offset of the latest record that has been sent, along with its aggregation, to the Kafka topic defined by **topicOut**.
-* **Commit Offset**: Refers to the offset of the last record that was flushed and has had its offset committed to Kafka. Once a record's offset is committed, it will not be reprocessed, even in cases of task error or rebalance.
-
-Here’s how these offsets are managed in practice:
-
-When a new `SinkRecord` arrives in the `Put` function of `AggregationSinkTask`, its offset is processed. Once a threshold (such as element count, value pattern, timeout, or retention) is met, the aggregation, including the record, is sent to Kafka, and the record’s offset is marked as flushed. When the `preCommit` method is triggered in `AggregationSinkTask`, all flushed offsets across each partition are committed, provided they weren’t already.
-
-**At least once** delivery is guaranteed, meaning a record is considered fully processed only when its offset is committed. 
-Any record with a processed or flushed (but uncommitted) offset may be received again by the connector if a task failure or rebalance occurs. This ensures that a record, even if already flushed, could be reprocessed and sent again to Kafka under failure scenarios.
-
-This design ensures a reliable **at least once** delivery model.
 
 ### AVRO
 
@@ -163,41 +146,6 @@ KSQL_OPTS: "-Dmax.request.size=20000000"
 
 If an aggregation exceeds the size set by **max.message.bytes**, the connector will divide the aggregation into multiple messages. For instance, if **max.message.bytes** is set to 1000000 bytes, and the aggregation size is 1500000 bytes, the connector will split the aggregation, sending two messages: one of approximately 900000 bytes (leaving a buffer) and another of 600000 bytes.
 
-### Retention
-
-Values in a Kafka topic are retained according to the **retention.ms** configuration. To prevent data loss during a connector crash, the connector must send aggregated data before any individual record in the aggregation reaches its retention limit in the input topic.
-
-Although the connector temporarily stores received data during aggregation, if a record surpasses its retention time in Kafka and the connector crashes before sending the aggregation, the data will be lost and will not be recoverable upon restart. This is because it will no longer be available in the original Kafka topic.
-
-To mitigate this, the connector is configured to send the aggregation for a partition if any record in the aggregation reaches **80%** of its retention time. However, if a crash occurs before this threshold and the connector is not restarted before the end of the retention period, that data will still be lost.
-
-
-### Limitations
-
-The aggregation schema is obtained from the Kafka output topic specified by the **topicOut** property. Therefore, this topic’s schema must be created before any data is sent to the connector.
-
-### Error Handling
-
-To view the logs of the connector, use the following command from the directory where the `docker-compose.yml` file is located:
-``` 
-docker-compose logs -f connect
-```
-Here, *connect* refers to the Kafka Connect service name specified in the `docker-compose.yml` file. For more detailed DEBUG-level logs, add the following line to the **CONNECT_LOG4J_LOGGERS** configuration parameter in the **connect** service:
-
-``` 
-com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkTask=DEBUG,com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkConnector=DEBUG
-```
-
-### Compilation and Deployment on LiveConnect
-
-To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the project and run:
-```
-sbt assembly
-```
-
-After compilation, locate the **aggregation-connector_{version}.jar** file in the **artifacts** directory. Copy this file and paste it into the **docker-compose/connect-plugins/** directory in LiveConnect (create this directory if it doesn’t already exist).
-
-Once LiveConnect is launched, the connector will be available for use.
 
 ## iGrafx Aggregation Main (Aggregation and iGrafx Sink Connector)
 
@@ -312,10 +260,6 @@ The following properties should be defined only if you want the connector to log
 * **kafkaLoggingEvents.isLogging** (Boolean): Determines if the connector logs file-related events to a Kafka topic (*true/false*). If **true**, events will be logged to a Kafka topic; if **false** (the default), they won’t.
 * **kafkaLoggingEvents.topic** (String): Specifies the Kafka topic name for logging events (*minimum length 1*).
 
-### Offset Management
-
-Offsets are managed in the same way as [for the aggregation connector](howto.md#offset-management)
-
 ### AVRO Format
 
 This connector requires data in AVRO format; other formats may lead to errors.
@@ -365,7 +309,7 @@ Note: The field names **DATAARRAY**, **QUOTE**, **TEXT**, and **COLUMNID** must 
 
 Any null value for an event, a column in an event, or a parameter in a column is considered an error and will halt the Task.
 
-### API iGrafx
+### iGrafx API
 
 The iGrafx API is used to send the CSV file to the API.
 The file transfer to the API is handled in **adapters/api/MainApiImpl.scala** by the **sendCsvToIGrafx** method, which takes as parameters the connector's properties and the path of the file to send.
@@ -380,13 +324,102 @@ To send the file, follow these two steps:
 
 The Workgroup ID, Workgroup Key, API URL and API Auth URL can be found in the iGrafx workgroup settings, under the **Open API** tab.
 
+
+## Connector Commonalities
+
+### Offset Management
+
+Offset management is handled in the code by the **PartitionTracker** class. Each partition of a topic specified in the **topics** property has an associated **PartitionTracker**,
+ensuring that **aggregation is only performed on data coming from the same partition**.
+
+The **PartitionTracker** maintains and uses three types of offsets:
+
+* **Processed Offset**: Tracks the offset of the most recent record received for the relevant partition. This is managed by the `Put` function within the `AggregationSinkTask`.
+* **Flushed Offset**: Represents the offset of the latest record that has been sent, along with its aggregation, to the Kafka topic defined by **topicOut**.
+* **Commit Offset**: Refers to the offset of the last record that was flushed and has had its offset committed to Kafka. Once a record's offset is committed, it will not be reprocessed, even in cases of task error or rebalance.
+
+Here’s how these offsets are managed in practice:
+
+When a new `SinkRecord` arrives in the `Put` function of `AggregationSinkTask`, its offset is processed. Once a threshold (such as element count, value pattern, timeout, or retention) is met, the aggregation, including the record, is sent to Kafka, and the record’s offset is marked as flushed. When the `preCommit` method is triggered in `AggregationSinkTask`, all flushed offsets across each partition are committed, provided they weren’t already.
+
+**At least once** delivery is guaranteed, meaning a record is considered fully processed only when its offset is committed.
+Any record with a processed or flushed (but uncommitted) offset may be received again by the connector if a task failure or rebalance occurs. This ensures that a record, even if already flushed, could be reprocessed and sent again to Kafka under failure scenarios.
+
+This design ensures a reliable **at least once** delivery model.
+
+### Retention
+
+Values in a Kafka topic are retained according to the **retention.ms** configuration. To prevent data loss during a connector crash, the connector must send aggregated data before any individual record in the aggregation reaches its retention limit in the input topic.
+
+Although the connector temporarily stores received data during aggregation, if a record surpasses its retention time in Kafka and the connector crashes before sending the aggregation, the data will be lost and will not be recoverable upon restart. This is because it will no longer be available in the original Kafka topic.
+
+To mitigate this, the connector is configured to send the aggregation for a partition if any record in the aggregation reaches **80%** of its retention time. However, if a crash occurs before this threshold and the connector is not restarted before the end of the retention period, that data will still be lost.
+
+### Error Handling
+
+To view the logs of the connector, use the following command from the directory where the `docker-compose.yml` file is located:
+``` 
+docker-compose logs -f connect
+```
+Here, *connect* refers to the Kafka Connect service name specified in the `docker-compose.yml` file. For more detailed DEBUG-level logs, add the following line to the **CONNECT_LOG4J_LOGGERS** configuration parameter in the **connect** service:
+
+``` 
+com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkTask=DEBUG,com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkConnector=DEBUG
+```
+
 ### Compilation and Deployment on LiveConnect
 
-To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the project and run:
+To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the project (Aggregation or AggregationMain) and run:
 ```
 sbt assembly
 ```
 
-After compilation, locate the **aggregation-main-connector_{version}.jar** file in the **artifacts** directory. Copy this file and paste it into the **docker-compose/connect-plugins/** directory in LiveConnect (create this directory if it doesn’t already exist).
+After compilation, locate the **aggregation-connector_{version}.jar** file (or **aggregation-main-connector_{version}.jar** for AggregationMain) in the **artifacts** directory. 
+
+Copy this file and paste it into the **docker-compose/connect-plugins/** directory in LiveConnect (create this directory if it doesn’t already exist).
 
 Once LiveConnect is launched, the connector will be available for use.
+
+### Connector Monitoring
+
+It is possible to monitor a connector:
+
+You can retrieve the state of a connector and its tasks in the CLI ksqlDB with the command:
+
+```sql
+SHOW CONNECTORS;
+````
+For errors that lead to the termination of a task, once the administrator has resolved the problem (for example, a permissions issue with writing a file), the task can be restarted with the following commands (these commands use the REST interface of Kafka Connect):
+
+``` 
+curl localhost:8083/connectors
+```
+
+This command retrieves the list of the connector's tasks and provides information about them, such as their ID and status. 
+```
+curl localhost:8083/connectors/<connectorName>/status | jq 
+```
+
+Replace **connectorName** with the name of the connector retrieved with the previous command (case sensitive). 
+
+You can then restart the **FAILED** tasks with the command:
+``` 
+curl -X POST localhost:8083/connectors/connectorName/tasks/taskId/restart
+```
+
+Here, replace **taskId** with the ID of the task retrieved with the previous command, and **connectorName** with the name of the connector (case sensitive) from two commands ago.
+
+For more information and commands about the monitoring of connectors/tasks, follow this link: [Confluent Documentation](https://docs.confluent.io/home/connect/monitoring.html).
+
+It is important to note that when a task goes to the **FAILED** state, the partitions that it was responsible for are redistributed among the remaining **RUNNING** tasks. Consequently, if there is an error in the **put** method of the initial task, the same data may cause the same error in the newly assigned task, potentially leading to all tasks of the connector being stopped. In this case, you need to restart all **FAILED** tasks of the connector once the issue is resolved.
+
+Moreover, if a worker leaves the cluster, the connectors/tasks associated with this worker enter the **UNASSIGNED** state for 5 minutes (default value of the **scheduled.rebalance.max.delay.ms** worker property). If the worker does not return after 5 minutes, the connectors/tasks are reassigned to new workers in the cluster. 
+
+If tasks are added or removed, the partitions can also be rebalanced and redistributed among the new number of tasks (partition rebalance).
+
+
+## Adding a New Connector
+
+To add a new connector, begin by including a module for it in the project’s **build.sbt** file. Then, create a class for your connector that extends either **SourceConnector** or **SinkConnector**, along with a class that extends **SourceTask** or **SinkTask** to define the tasks for the connector.
+
+Additionally, thoroughly document the connector, detailing its functionality, usage instructions, and configurable properties.
