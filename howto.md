@@ -171,11 +171,6 @@ Although the connector temporarily stores received data during aggregation, if a
 
 To mitigate this, the connector is configured to send the aggregation for a partition if any record in the aggregation reaches **80%** of its retention time. However, if a crash occurs before this threshold and the connector is not restarted before the end of the retention period, that data will still be lost.
 
-### Future Work
-
-Currently, if an aggregation exceeds the **max.message.bytes** limit (configured in the output Kafka topic), the connector sends the entire aggregation in smaller messages, ensuring each segment respects the limit. This approach may lead to some messages being significantly smaller, such as containing only 10% of the maximum allowed size.
-
-A potential improvement would be to send as many full-sized messages as possible while holding any remaining small data within the current aggregation, waiting for more records to arrive. This would help avoid sending small messages, though this strategy may not work well with the **value pattern** threshold.
 
 ### Limitations
 
@@ -205,8 +200,6 @@ After compilation, locate the **aggregation-connector_{version}.jar** file in th
 Once LiveConnect is launched, the connector will be available for use.
 
 ## iGrafx Aggregation Main (Aggregation and iGrafx Sink Connector)
-
-### Overview
 
 This connector leverages the aggregation capabilities of the standard aggregation connector (explained in the last section) to combine multiple events, but it also sends the aggregation results directly to the iGrafx Mining API. Typically, before sending data to the iGrafx Mining API, multiple records representing process events are aggregated together, formatted into a CSV file, and then transmitted to the API. The Aggregation iGrafx Sink Connector automates this process.
 
@@ -264,7 +257,7 @@ value.converter.schema.registry.url = "http://schema-registry:8081"
 
 **Warning**: It is necessary to escape the backslash character.
 
-### Mandatory Properties
+#### Mandatory Properties
 
 Below are examples of values for required properties. The following properties, however, should remain unchanged:
 
@@ -295,7 +288,7 @@ You may modify the following properties as needed:
 
 For more information on regex (used with the **threshold.valuePattern** property): [Regex Cheat Sheet](https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285)
 
-### Optional Properties
+#### Optional Properties
 
 The following properties are only necessary if the connector should create a Column Mapping for the iGrafx Project:
 
@@ -318,3 +311,78 @@ The following properties should be defined only if you want the connector to log
 
 * **kafkaLoggingEvents.isLogging** (Boolean): Determines if the connector logs file-related events to a Kafka topic (*true/false*). If **true**, events will be logged to a Kafka topic; if **false** (the default), they won’t.
 * **kafkaLoggingEvents.topic** (String): Specifies the Kafka topic name for logging events (*minimum length 1*).
+
+### AVRO Format
+
+This connector requires data in AVRO format; other formats may lead to errors.
+
+Each record from Kafka should match the following structure, verified by comparing the schema to the AVRO record:
+
+```
+ARRAY<STRUCT<columnID INT, text VARCHAR, quote BOOLEAN>>
+```
+
+
+The **Array** represents one event (which corresponds to one line in the CSV file), with each **STRUCT** in the Array representing a column of the event (a field in the CSV file, like the *caseId* or *activity*).
+
+Thus, one record from Kafka equates to one event, and the connector aggregates multiple events. When a threshold is met, these aggregated events are written to the same file, which is then sent to the iGrafx API.
+
+To correctly write a field to the CSV file, the following are needed:
+
+* The column number (**columnId**),
+* The value (**text**),
+* Whether or not the field is quoted (**quote**).
+
+For example, the following data from a Kafka topic (illustrated here in JSON format but actually in AVRO):
+
+```json
+{
+    "DATAARRAY": [
+        {"QUOTE": true, "TEXT": "activity1", "COLUMNID": 1},
+        {"QUOTE": false, "TEXT": "caseId1", "COLUMNID": 0},
+        {"QUOTE": false, "TEXT": "endDate1", "COLUMNID": 3}
+    ]
+}
+````
+
+will be written as the following line in the CSV file:
+
+```
+caseId1,"activity1",null,endDate1
+```
+If the following connector properties are set:
+
+- csv.separator = ``,``
+- csv.quote = ``"``
+- csv.defaultTextValue = ``null``
+- csv.fieldsNumber = ``4``
+
+Note: The field names **DATAARRAY**, **QUOTE**, **TEXT**, and **COLUMNID** must be respected in ksqlDB to correctly read AVRO data from a Kafka topic.
+
+Any null value for an event, a column in an event, or a parameter in a column is considered an error and will halt the Task.
+
+### API iGrafx
+
+The iGrafx API is used to send the CSV file to the API.
+The file transfer to the API is handled in **adapters/api/MainApiImpl.scala** by the **sendCsvToIGrafx** method, which takes as parameters the connector's properties and the path of the file to send.
+
+To send the file, follow these two steps:
+
+1. **Retrieve the connection token**:  
+   Use the URL path **{authUrl}/protocol/openid-connect/token**, where *{authUrl}* corresponds to the **api.authUrl** property of the connector. The request also includes details about the workgroup ID and workgroup Key. Upon success, the HTTP response contains a JSON object with an **access_token** key.
+
+2. **Send the file**:  
+   Use the URL **{apiUrl}/project/{projectId}/file?teamId={workGroupId}**, where *{apiUrl}* corresponds to the **api.url** property of the connector. This request requires information about the workgroup ID, project ID, file path, and the previously obtained token.
+
+The Workgroup ID, Workgroup Key, API URL and API Auth URL can be found in the iGrafx workgroup settings, under the **Open API** tab.
+
+### Compilation and Deployment on LiveConnect
+
+To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the project and run:
+```
+sbt assembly
+```
+
+After compilation, locate the **aggregation-main-connector_{version}.jar** file in the **artifacts** directory. Copy this file and paste it into the **docker-compose/connect-plugins/** directory in LiveConnect (create this directory if it doesn’t already exist).
+
+Once LiveConnect is launched, the connector will be available for use.
