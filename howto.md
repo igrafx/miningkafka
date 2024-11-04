@@ -128,7 +128,7 @@ To maintain data type consistency during aggregation, the ksqlDB STREAMs (applie
 
 The connector retrieves the AVRO schema associated with the output topic in ksqlDB via HTTP. It then adjusts the schema of incoming Kafka records to align with this output schema, ensuring compatibility and data integrity throughout the aggregation process.
 
-### Max Message Bytes
+### Maximum Message Size
 
 Kafka imposes a default size limit for individual messages sent to a topic. By default, messages cannot exceed **1048588 bytes** in size.
 
@@ -311,6 +311,10 @@ The following properties should be defined only if you want the connector to log
 
 * **kafkaLoggingEvents.isLogging** (Boolean): Determines if the connector logs file-related events to a Kafka topic (*true/false*). If **true**, events will be logged to a Kafka topic; if **false** (the default), they won’t.
 * **kafkaLoggingEvents.topic** (String): Specifies the Kafka topic name for logging events (*minimum length 1*).
+
+### Offset Management
+
+Offsets are managed in the same way as [for the aggregation connector](howto.md#offset-management)
 
 ### AVRO Format
 
