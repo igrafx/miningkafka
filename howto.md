@@ -14,6 +14,315 @@ Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.co
 ## Table of Contents
 
 
+## Quickstart
+
+To use the iGrafx Kafka Modules, first, clone the repository:
+
+```
+git clone https://github.com/igrafx/miningkafka.git
+```
+Then, make sure you have Docker and Docker Compose installed on your system. 
+Follow these links for installation instructions:
+- [Docker](https://docs.docker.com/get-started/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+### iGrafx Liveconnect: Quickstart
+
+To launch **LiveConnect** run the following command:
+```
+cd igrafx-liveconnect/docker-compose/
+make liveconnect
+````
+
+To stop **LiveConnect** run the following command:
+```
+make liveconnect-down
+```
+Furthermore, if you want to remove all the streams, tables or connectors and delete the data you inserted during your tests, 
+you can delete the ``/data`` folder that is in the ``/docker-compose`` directory.
+
+
+### ksqlDB CLI and Kafka UI: Quickstart
+With liveconnect running, you can now connect to the **ksqlDB CLI** that will allow you to send the desired commands.
+
+Type the following command from /docker-compose in a terminal to connect to the CLI:
+````bash
+docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
+````
+Once in the CLI, you can send ksql commands, and you can quit it by typing ``exit``.
+
+Moreover, Kafka UI is a user interface you can use to get information about your kafka cluster, 
+the topics, the ksql pipelines you created and more.
+
+You can then access it at http://localhost:9021/.
+
+The credentials for Kafka UI are set in the ``docker-compose.yml`` file, within the ``JAVA_OPTS`` variable.
+``-Dspring.security.user.name`` is the username and ``-Dspring.security.user.password`` is the password.
+
+### iGrafx Connectors: Quickstart
+If you want to use the iGrafx Connectors to send data from Kafka to the Process360 Live, 
+you must  go to the ``igrafx-connectors`` directory as follows:
+
+```bash
+cd igrafx-connectors/
+```
+Then, you can build the desired JAR file using the following command:
+
+```
+sbt aggregationMain/assembly
+````
+Once the **JAR** is created, you can find it in the ``/igrafx-connectors/artifacts`` repository. 
+Copy the latest **JAR** and paste it in the ``/docker-compose/connect-plugins/`` directory of the iGrafx Liveconnect module.
+
+Now, by relaunching Liveconnect with the ``make liveconnect`` command, you will now be able to use the connector in ksql.
+
+Furthermore, if you wish to check the status of the connectors you created, use the following command in the **ksqlDB CLI**:
+
+````sql
+SHOW CONNECTORS;
+````
+Finally, if one connector has a ``FAILED`` state, you can check the logs in ``Kafka-connect`` by using the following command from the ``/docker-compose`` directory in the Liveconnect module :
+````bash
+docker-compose logs -f connect
+````
+
+### iGrafx UDFs: Quickstart
+UDFs (User Defined Functions) are useful for applying custom transformations to each value in a specific column of a stream.
+
+You can create custom UDFs and integrate them into LiveConnect, making them available for use in data pipelines to enhance processing and transformation capabilities.
+
+If you want to use the iGrafx UDFs, you must first go to the ``igrafx-udfs`` directory as follows:
+
+```bash
+cd igrafx-udfs/
+```
+Then, you can build the desired JAR file containing all the UDFsusing the following command:
+
+```bash
+sbt assembly
+```
+Once the **JAR** is created, you can find it in the ``/igrafx-udfs/target/scala-2.13`` repository. 
+Copy the latest **JAR** and paste it in the ``/docker-compose/extensions/`` directory of the iGrafx Liveconnect module. 
+If this directory doesn't exist, you can create it.
+
+Now, by relaunching Liveconnect with the ``make liveconnect`` command, you will now be able to use the UDFs in ksql.
+
+Moreover, you can display a list of available UDFs using the following command in the **ksqlDB CLI**:
+
+
+````sql
+SHOW FUNCTIONS;
+````
+You can also check the documentation of a given UDF by using the following command:
+
+````sql
+DESCRIBE FUNCTION <UDF_NAME>;
+````
+Where <UDF_NAME> is the name of the UDF you want to check the documentation of.
+
+## iGrafx Liveconnect:
+
+This module provides a Kafka infrastructure setup located in the `docker-compose/` subdirectory. It includes essential components for managing and interacting with Kafka and optional tools for extended functionality:
+
+- **Broker and Zookeeper**: Core components for managing Kafka topics and messages.
+- **Schema Registry**: Service for registering schemas on Kafka topics.
+- **Kafka Connect (Connect)**: Supports Kafka Connect connectors for data integration.
+- **ksqlDB and CLI**: Enables stream processing and querying of Kafka topics.
+- **Kafka UI (or Confluent Control Center)**: A graphical interface for monitoring and managing Kafka cluster functionalities.
+- **SFTP Server** *(optional)*
+- **PostgreSQL Database** *(optional)*: For auxiliary processing.
+
+### Requirements
+
+To use the LiveConnect module, you must have Docker and Docker Compose installed on your system. Follow these links for installation instructions:
+
+- [Install Docker](https://docs.docker.com/get-docker/)
+- [Install Docker Compose](https://docs.docker.com/compose/install/)
+
+### Launching Liveconnect
+
+The containers within this infrastructure communicate through the internal Docker network, `kafka-network`.
+
+**To launch **LiveConnect** (Dockerized Kafka infrastructure):**
+```
+cd docker-compose/
+make liveconnect
+```
+
+**To stop the LiveConnect infrastructure:**
+```
+cd docker-compose/
+make liveconnect-down
+```
+### Recommended Connectors
+
+Below are the installation commands for the recommended connectors:
+
+- **[File System Source Connector](https://www.confluent.io/hub/jcustenborder/kafka-connect-spooldir)**: For loading files in formats such as CSV, JSON, etc.
+    ```bash
+    docker-compose exec connect confluent-hub install --component-dir /connect-plugins/ --verbose jcustenborder/kafka-connect-spooldir:2.0.65
+    ```
+
+- **[JDBC Connector (Source and Sink)](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc)**: For connecting to JDBC-compatible databases.
+    ```bash
+    docker-compose exec connect confluent-hub install --component-dir /connect-plugins/ --verbose confluentinc/kafka-connect-jdbc:10.8.0
+    ```
+
+- **[iGrafx Sink Connector](#igrafx-aggregation-main-aggregation-and-igrafx-sink-connector)**: For sending data from Kafka topics to an iGrafx project.
+
+  You have two options to install the iGrafx Sink connector:
+  1. **Build the Connector Jar**: Follow the instructions in the [iGrafx Connectors section](#compilation-and-deployment-on-liveconnect) to build the connector JAR.
+  2. **Retrieve the Connector Jar from the pipeline**
+
+> Note that you may also download the iGrafx UDFs by following [similar commands](#igrafx-udfs)
+
+### Installing New Connectors
+
+To add a Kafka connector, place it in the `docker-compose/connect-plugins/` directory, as referenced by the `CONNECT_PLUGIN_PATH` variable in the `docker-compose.yml`.
+
+You can easily find and install a new connector using the [Confluent Hub Client](https://docs.confluent.io/home/connect/confluent-hub/client.html).
+When doing so, make sure you download the latest version of the connector.
+
+To do so, you must *manually* copy a directory with the required JAR files and configurations into the designated connectors directory (`connect-plugins` in our setup).
+After adding a new connector, restart the `liveconnect` Docker container with the ``make liveconnect`` command.
+
+There are numerous Kafka connectors, including many from the [Camel Kafka ecosystem](https://camel.apache.org/camel-kafka-connector/latest/).
+You may look for them in the [Maven repository](https://mvnrepository.com/) and directly download a **jar** or a **targz** as per your preference.
+You then have to place the **JAR** in the `docker-compose/connect-plugins/` directory.
+
+
+### Configuration for a Specific Kafka Topic
+
+The `igrafx-liveconnect` template can be deployed on a separate VM from the main application.
+
+However, to ensure proper communication, the Kafka registry and broker associated with the topic must be accessible to the `api` container of the target application. This requires opening the registry and Kafka broker ports on the VM host where they are installed and confirming that the host is reachable from the `api` service.
+
+To set up a workgroup with LiveConnect:
+
+- **Set the Workgroup ID:** Define the workgroup ID in the `.env` file under `WORKGROUP_ID`.
+- **Configure Kafka Connection in Database:** In the `WORKGROUPS` table in PostgreSQL, update the `KAFKA_BROKER` and `KAFKA_REGISTRY` columns with the appropriate URLs. For example:
+  - `KAFKA_BROKER`: `http://kafka-broker:29092`
+  - `KAFKA_REGISTRY`: `http://schema-registry:8081`
+
+### Example Configuration for Cross-VM Communication
+
+If the VMs are on the same private network and ports have been opened on the LiveConnect VM, you can configure the `WORKGROUPS` table as follows:
+
+- **Kafka Broker URL:** Set `KAFKA_BROKER` to `http://192.168.1.128:19092`
+- **Kafka Registry URL:** Set `KAFKA_REGISTRY` to `http://192.168.1.128:8081`
+
+Once configured, the workgroup administrator can activate the Kafka topic, allowing the topic to receive updates on all cases in a project during project updates.
+
+
+### Data-Transform Database
+
+A PostgreSQL database is available to perform data transformations that are not yet supported in ksqlDB. This setup allows you to add additional columns or perform advanced processing on data before it's ingested back into Kafka.
+
+The following example demonstrates how to use an intermediate PostgreSQL database to generate an additional column `cnt`, which numbers events within each case (identified here by the `INCIDENT` column).
+
+#### Step 1: Create a Table with Auto-Increment Index `id`
+
+The auto-increment `id` index allows the ksqlDB connector to continuously retrieve the latest data. If available, other fields (such as timestamp or unique event identifier) can also serve this purpose.
+
+> **Note:** This table can be set up to create automatically on initial launch (see `conf/pg-initdb.d/`).
+
+Example command to create the table in your local PostgreSQL instance (accessible on the default port, with connection details in the `.env` file):
+
+```sql
+CREATE TABLE public."JDBC_TABLE" (
+  id SERIAL PRIMARY KEY NOT NULL
+);
+```
+#### Step 2: Feed the Table from a Kafka Topic Using a JDBC Sink Connector
+The following JDBC sink connector populates the PostgreSQL ``JDBC_TABLE`` table from the ``JDBC_TABLE`` Kafka topic:
+
+``` 
+CREATE SINK CONNECTOR JDBC_SINK_01 WITH (
+  'connector.class'          = 'io.confluent.connect.jdbc.JdbcSinkConnector',
+  'key.converter'             = 'org.apache.kafka.connect.storage.StringConverter',
+  'topics'                         = 'JDBC_TABLE',
+  'table.name.format'     = 'JDBC_TABLE',
+  'connection.url'           = 'jdbc:postgresql://data-transform:5432/transform?verifyServerCertificate=false',
+  'connection.user'          = 'datamanager',
+  'connection.password'      = '1r8P!eXx',
+  'auto.evolve'              = 'true'
+);
+```
+
+#### Step 3: Read Data from the Table Using a JDBC Source Connector
+The following JDBC source connector reads data from the PostgreSQL table and includes a generated ``cnt`` column that assigns sequential numbers to events within each ``INCIDENT`` case.
+The ``query`` parameter in the connector specifies this transformation:
+``` 
+CREATE SOURCE CONNECTOR JDBCSOURCEConnector1 WITH (
+    'connector.class' = 'io.confluent.connect.jdbc.JdbcSourceConnector',
+    'tasks.max' = '1',
+  'connection.url'           = 'jdbc:postgresql://data-transform:5432/transform?verifyServerCertificate=false',
+  'connection.user'          = 'datamanager',
+  'connection.password'      = '1r8P!eXx',
+    'mode' = 'incrementing',
+    'incrementing.column.name' = 'id',
+    'numeric.mapping' = 'best_fit',
+    'topic.prefix' = 'jdbc_cnt_case_lines',
+    'query' = 'SELECT * , ROW_NUMBER() OVER(PARTITION BY INCIDENT ORDER BY id ASC) as cnt from JDBC_TABLE'
+);
+```
+
+### SFTP Server Configuration
+
+An SFTP server may be necessary to allow users to regularly upload CSV files for data updates.
+A pre-configured SFTP server is included in the `docker-compose` setup, using the [corilus/sftp container](https://hub.docker.com/r/corilus/sftp).
+
+Furthermore, the `docker-compose.yml` file provides options to configure:
+- **SFTP User and Password:** Define the username and password for accessing the SFTP server.
+- **File Directory and UID:** Specify the local directory where uploaded files will be stored, along with the user ID (UID) for permissions.
+- **Local Port:** Set the port on which the SFTP server will be accessible.
+
+Ensure that any directories or files uploaded via the SFTP server match the directory mounts used by the `connect` service in `docker-compose.yml`. This alignment is particularly important if changes or additional users are added, to maintain seamless file access between the `connect` and `sftp` containers.
+
+### Connecting to the SFTP Server
+
+To connect to the SFTP server using the default user `foo`, you can use an SFTP client such as **FileZilla** or **WinSCP**. Connect to `localhost` on the port specified in the `docker-compose` file (default is `2222`).
+
+- **Username:** `foo`
+- **Password:** Use the password defined in `docker-compose.yml`
+- **Directory:** Upload files to the directory specified in `docker-compose.yml`
+
+You can connect via command line:
+
+```bash
+sftp -P 2222 foo@<host-ip>
+```
+
+### Kafka-UI
+
+Kafka-UI is a user-friendly graphical interface for managing and interacting with a Kafka/KSQLDB cluster.
+It allows you to view Kafka topic messages, manage connectors, run ksqlDB queries, and monitor various aspects of your Kafka cluster's performance.
+
+To log in, use the username and password defined in the `docker-compose.yml` file under the `kafka-ui` section.
+These credentials are configured via the `JAVA_OPTS` variable, where `-Dspring.security.user.name` specifies the username and `-Dspring.security.user.password` sets the password.
+
+You can also access Kafka-UI locally by navigating to [http://localhost:9021](http://localhost:9021).
+
+
+### ksqlDB CLI Console
+The ksqlDB CLI provides command-line access for managing KSQL commands, viewing connectors, topics, streams, tables, and more.
+
+To access the ksqlDB CLI, use the following command:
+```bash
+docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
+```
+
+Once inside the ksqlDB CLI prompt, you can set environment-specific variables as needed. For example, to configure the offset setting, use:
+``` 
+SET 'auto.offset.reset' = 'earliest';
+```
+This command sets the offset to the earliest, ensuring that the CLI reads from the beginning of each topic.
+
+To quit the ksqlDB CLI, type `exit` and press enter.
+
+For further information on ksqlDB CLI configuration, please refer to the documentation at [click here](https://docs.ksqldb.io/en/latest/operate-and-deploy/installation/cli-config/)
+
+For further documentation on ksqlDB, please refer to the documentation at [click here](https://ksqldb.io/)
 
 
 ## iGrafx Kafka Connectors:
@@ -65,7 +374,7 @@ The aggregation is triggered based on several thresholds:
 >**Note**: The aggregation schema is obtained from the Kafka output topic specified by the **topicOut** property. Therefore, this topic’s schema must be created before any data is sent to the connector.
 
 
-#### Connector Properties
+### Connector Properties
 
 To set up the connector, specify the following properties (example values provided):
 
@@ -147,7 +456,7 @@ KSQL_OPTS: "-Dmax.request.size=20000000"
 If an aggregation exceeds the size set by **max.message.bytes**, the connector will divide the aggregation into multiple messages. For instance, if **max.message.bytes** is set to 1000000 bytes, and the aggregation size is 1500000 bytes, the connector will split the aggregation, sending two messages: one of approximately 900000 bytes (leaving a buffer) and another of 600000 bytes.
 
 
-## iGrafx Aggregation Main (Aggregation and iGrafx Sink Connector)
+### iGrafx Aggregation Main (Aggregation and iGrafx Sink Connector)
 
 This connector leverages the aggregation capabilities of the standard aggregation connector (explained in the last section) to combine multiple events, but it also sends the aggregation results directly to the iGrafx Mining API. Typically, before sending data to the iGrafx Mining API, multiple records representing process events are aggregated together, formatted into a CSV file, and then transmitted to the API. The Aggregation iGrafx Sink Connector automates this process.
 
@@ -205,7 +514,7 @@ value.converter.schema.registry.url = "http://schema-registry:8081"
 
 **Warning**: It is necessary to escape the backslash character.
 
-#### Mandatory Properties
+### Mandatory Properties
 
 Below are examples of values for required properties. The following properties, however, should remain unchanged:
 
@@ -236,7 +545,7 @@ You may modify the following properties as needed:
 
 For more information on regex (used with the **threshold.valuePattern** property): [Regex Cheat Sheet](https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285)
 
-#### Optional Properties
+### Optional Properties
 
 The following properties are only necessary if the connector should create a Column Mapping for the iGrafx Project:
 
@@ -418,7 +727,7 @@ Moreover, if a worker leaves the cluster, the connectors/tasks associated with t
 If tasks are added or removed, the partitions can also be rebalanced and redistributed among the new number of tasks (partition rebalance).
 
 
-## Adding a New Connector
+### Adding a New Connector
 
 To add a new connector, begin by including a module for it in the project’s **build.sbt** file. Then, create a class for your connector that extends either **SourceConnector** or **SinkConnector**, along with a class that extends **SourceTask** or **SinkTask** to define the tasks for the connector.
 
@@ -680,241 +989,6 @@ Once in the ksqlDB CLI, the different UDFs at your disposal can be listed with t
 SHOW FUNCTIONS;
 ```
 
-### iGrafx Liveconnect:
+## Examples
 
-This module provides a Kafka infrastructure setup located in the `docker-compose/` subdirectory. It includes essential components for managing and interacting with Kafka and optional tools for extended functionality:
 
-- **Broker and Zookeeper**: Core components for managing Kafka topics and messages.
-- **Schema Registry**: Service for registering schemas on Kafka topics.
-- **Kafka Connect (Connect)**: Supports Kafka Connect connectors for data integration.
-- **ksqlDB and CLI**: Enables stream processing and querying of Kafka topics.
-- **Kafka UI (or Confluent Control Center)**: A graphical interface for monitoring and managing Kafka cluster functionalities.
-- **SFTP Server** *(optional)*
-- **PostgreSQL Database** *(optional)*: For auxiliary processing.
-
-#### Requirements
-
-To use the LiveConnect module, you must have Docker and Docker Compose installed on your system. Follow these links for installation instructions:
-
-- [Install Docker](https://docs.docker.com/get-docker/)
-- [Install Docker Compose](https://docs.docker.com/compose/install/)
-
-#### Launching Liveconnect
-
-The containers within this infrastructure communicate through the internal Docker network, `kafka-network`.
-
-**To launch **LiveConnect** (Dockerized Kafka infrastructure):**
-```
-cd docker-compose/
-make liveconnect
-```
-
-**To stop the LiveConnect infrastructure:**
-```
-cd docker-compose/
-make liveconnect-down
-```
-# Recommended Connectors
-
-Below are the installation commands for the recommended connectors:
-
-- **[File System Source Connector](https://www.confluent.io/hub/jcustenborder/kafka-connect-spooldir)**: For loading files in formats such as CSV, JSON, etc.
-    ```bash
-    docker-compose exec connect confluent-hub install --component-dir /connect-plugins/ --verbose jcustenborder/kafka-connect-spooldir:2.0.65
-    ```
-
-- **[JDBC Connector (Source and Sink)](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc)**: For connecting to JDBC-compatible databases.
-    ```bash
-    docker-compose exec connect confluent-hub install --component-dir /connect-plugins/ --verbose confluentinc/kafka-connect-jdbc:10.8.0
-    ```
-
-- **[iGrafx Sink Connector](#igrafx-aggregation-main-aggregation-and-igrafx-sink-connector)**: For sending data from Kafka topics to an iGrafx project.
-
-  You have two options to install the iGrafx Sink connector:
-    1. **Build the Connector Jar**: Follow the instructions in the [iGrafx Connectors section](#compilation-and-deployment-on-liveconnect) to build the connector JAR.
-    2. **Retrieve the Connector Jar from the pipeline**
-  
-> Note that you may also download the iGrafx UDFs by following [similar commands](#igrafx-udfs)
-
-#### Installing New Connectors
-
-To add a Kafka connector, place it in the `docker-compose/connect-plugins/` directory, as referenced by the `CONNECT_PLUGIN_PATH` variable in the `docker-compose.yml`.
-
-You can easily find and install a new connector using the [Confluent Hub Client](https://docs.confluent.io/home/connect/confluent-hub/client.html).
-
-If needed you may also update the version of the connector.
-
-For instance, if you want to update the`kafka-connect-servicenow` connector to Version 2.5.4, 
-first check the connector reference on [Confluent Hub](https://confluent.io/hub), then run: 
-
-````
-docker-compose exec connect confluent-hub  install --component-dir /connect-plugins/ --verbose confluentinc/kafka-connect-servicenow:2.5.4
-
-````
->Note: The ``--component-dir /connect-plugins/`` option specifies the install path. This addition differs from the Confluent site's default command.
->
->Furthermore, `confluent-hub` aims to simplify the retrieval and installation of a version of a module referenced under https://confluent.io/hub.
-
-
-In practice, this process involves *manually* copying a directory with the required JAR files and configurations into the designated connectors directory (`connect-plugins` in our setup). 
-After adding a new connector, restart the `liveconnect` Docker container with the ``make liveconnect`` command (which uses the `confluentinc/cp-kafka-connect` image) to load the changes.
-
-There are numerous Kafka connectors, including many from the [Camel Kafka ecosystem](https://camel.apache.org/camel-kafka-connector/latest/), 
-which do better with manual installation. 
-However, note that you may also try looking for them in the [Maven repository](https://mvnrepository.com/) and directly download a **jar** or a **targz** as per your preference.
-
-Nevertheless, if you wish to download them manually, follow the procedure below:
-
-**Manual Installation Procedure:**
-
-1. Download the connector package. For example:
-```
-wget https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-smtp-kafka-connector/0.10.1/camel-smtp-kafka-connector-0.10.1-package.tar.gz
-````
-2. Decompress the files.
-````
-tar -xvzf camel-smtp-kafka-connector-0.10.1-package.tar.gz
-````
-3. Move the connector folder into `connect-plugins`.
-````
-mv camel-smtp-kafka-connector connect-plugins/camel-smtp-kafka-connector-0.10.1-package/
-
-````
-4. Restart the `liveconnect` container to activate the connector.
-````
-make liveconnect-down
-make liveconnect
-````
-
-#### Kafka-UI Configuration
-
-Kafka-UI is a user-friendly graphical interface for managing and interacting with a Kafka/KSQLDB cluster. It allows you to easily view Kafka topic messages, manage created connectors, run ksqlDB queries, and monitor various aspects of your Kafka cluster's performance.
-
-#### Kafka-UI Credentials
-
-The username and password required to log in to Kafka-UI are specified in the `docker-compose.yml` file, within the `kafka-ui` section. These credentials are set via the `JAVA_OPTS` variable. Specifically, the `-Dspring.security.user.name` option defines the username, while the `-Dspring.security.user.password` option sets the password.
-
-#### ksqlDB CLI Console
-The ksqlDB CLI provides command-line access for managing KSQL commands, viewing connectors, topics, streams, tables, and more.
-
-To access the ksqlDB CLI, use the following command:
-```bash
-docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
-```
-
-Once inside the ksqlDB CLI prompt, you can set environment-specific variables as needed. For example, to configure the offset setting, use:
-``` 
-SET 'auto.offset.reset' = 'earliest';
-```
-This command sets the offset to the earliest, ensuring that the CLI reads from the beginning of each topic.
-
-To quit the ksqlDB CLI, type `exit` and press enter.
-
-For further information on ksqlDB CLI configuration, please refer to the documentation at [click here](https://docs.ksqldb.io/en/latest/operate-and-deploy/installation/cli-config/)
-
-For further documentation on ksqlDB, please refer to the documentation at [click here](https://ksqldb.io/)
-
-#### Local Execution
-you can access Kafka UI locally at: [http://localhost:9021](http://localhost:9021)
-
-#### Configuration for a Specific Kafka Topic
-
-The `igrafx-liveconnect` template can be deployed on a separate VM from the main application.
-
-However, to ensure proper communication, the Kafka registry and broker associated with the topic must be accessible to the `api` container of the target application. This requires opening the registry and Kafka broker ports on the VM host where they are installed and confirming that the host is reachable from the `api` service.
-
-To set up a workgroup with LiveConnect:
-
-- **Set the Workgroup ID:** Define the workgroup ID in the `.env` file under `WORKGROUP_ID`.
-- **Configure Kafka Connection in Database:** In the `WORKGROUPS` table in PostgreSQL, update the `KAFKA_BROKER` and `KAFKA_REGISTRY` columns with the appropriate URLs. For example:
-  - `KAFKA_BROKER`: `http://kafka-broker:29092`
-  - `KAFKA_REGISTRY`: `http://schema-registry:8081`
-
-#### Example Configuration for Cross-VM Communication
-
-If the VMs are on the same private network and ports have been opened on the LiveConnect VM, you can configure the `WORKGROUPS` table as follows:
-
-- **Kafka Broker URL:** Set `KAFKA_BROKER` to `http://192.168.1.128:19092`
-- **Kafka Registry URL:** Set `KAFKA_REGISTRY` to `http://192.168.1.128:8081`
-
-Once configured, the workgroup administrator can activate the Kafka topic, allowing the topic to receive updates on all cases in a project during project updates.
-
-
-#### Data-Transform Database
-
-A PostgreSQL database is available to perform data transformations that are not yet supported in ksqlDB. This setup allows you to add additional columns or perform advanced processing on data before it's ingested back into Kafka.
-
-The following example demonstrates how to use an intermediate PostgreSQL database to generate an additional column `cnt`, which numbers events within each case (identified here by the `INCIDENT` column).
-
-#### Step 1: Create a Table with Auto-Increment Index `id`
-
-The auto-increment `id` index allows the ksqlDB connector to continuously retrieve the latest data. If available, other fields (such as timestamp or unique event identifier) can also serve this purpose.
-
-> **Note:** This table can be set up to create automatically on initial launch (see `conf/pg-initdb.d/`).
-
-Example command to create the table in your local PostgreSQL instance (accessible on the default port, with connection details in the `.env` file):
-
-```sql
-CREATE TABLE public."JDBC_TABLE" (
-  id SERIAL PRIMARY KEY NOT NULL
-);
-```
-#### Step 2: Feed the Table from a Kafka Topic Using a JDBC Sink Connector
-The following JDBC sink connector populates the PostgreSQL ``JDBC_TABLE`` table from the ``JDBC_TABLE`` Kafka topic:
-
-``` 
-CREATE SINK CONNECTOR JDBC_SINK_01 WITH (
-  'connector.class'          = 'io.confluent.connect.jdbc.JdbcSinkConnector',
-  'key.converter'             = 'org.apache.kafka.connect.storage.StringConverter',
-  'topics'                         = 'JDBC_TABLE',
-  'table.name.format'     = 'JDBC_TABLE',
-  'connection.url'           = 'jdbc:postgresql://data-transform:5432/transform?verifyServerCertificate=false',
-  'connection.user'          = 'datamanager',
-  'connection.password'      = '1r8P!eXx',
-  'auto.evolve'              = 'true'
-);
-```
-
-#### Step 3: Read Data from the Table Using a JDBC Source Connector
-The following JDBC source connector reads data from the PostgreSQL table and includes a generated ``cnt`` column that assigns sequential numbers to events within each ``INCIDENT`` case. 
-The ``query`` parameter in the connector specifies this transformation:
-``` 
-CREATE SOURCE CONNECTOR JDBCSOURCEConnector1 WITH (
-    'connector.class' = 'io.confluent.connect.jdbc.JdbcSourceConnector',
-    'tasks.max' = '1',
-  'connection.url'           = 'jdbc:postgresql://data-transform:5432/transform?verifyServerCertificate=false',
-  'connection.user'          = 'datamanager',
-  'connection.password'      = '1r8P!eXx',
-    'mode' = 'incrementing',
-    'incrementing.column.name' = 'id',
-    'numeric.mapping' = 'best_fit',
-    'topic.prefix' = 'jdbc_cnt_case_lines',
-    'query' = 'SELECT * , ROW_NUMBER() OVER(PARTITION BY INCIDENT ORDER BY id ASC) as cnt from JDBC_TABLE'
-);
-```
-
-#### SFTP Server Configuration
-
-An SFTP server may be necessary to allow users to regularly upload CSV files for data updates. 
-A pre-configured SFTP server is included in the `docker-compose` setup, using the [corilus/sftp container](https://hub.docker.com/r/corilus/sftp).
-
-Furthermore, the `docker-compose.yml` file provides options to configure:
-- **SFTP User and Password:** Define the username and password for accessing the SFTP server.
-- **File Directory and UID:** Specify the local directory where uploaded files will be stored, along with the user ID (UID) for permissions.
-- **Local Port:** Set the port on which the SFTP server will be accessible.
-
-Ensure that any directories or files uploaded via the SFTP server match the directory mounts used by the `connect` service in `docker-compose.yml`. This alignment is particularly important if changes or additional users are added, to maintain seamless file access between the `connect` and `sftp` containers.
-
-#### Connecting to the SFTP Server
-
-To connect to the SFTP server using the default user `foo`, you can use an SFTP client such as **FileZilla** or **WinSCP**. Connect to `localhost` on the port specified in the `docker-compose` file (default is `2222`).
-
-- **Username:** `foo`
-- **Password:** Use the password defined in `docker-compose.yml`
-- **Directory:** Upload files to the directory specified in `docker-compose.yml`
-
-You can connect via command line:
-
-```bash
-sftp -P 2222 foo@<host-ip>
-```
