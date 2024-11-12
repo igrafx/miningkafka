@@ -122,7 +122,7 @@ class MainKafkaLoggingEventsImpl(private val log: Logger) extends MainKafkaLoggi
   private def getKafkaLoggingEventsSchema: Schema = {
     //format: off
     val schema: Schema = SchemaBuilder
-      .record("igrafxKafkaLoggingEventsSchema")
+      .record("IGrafxKafkaLoggingEventsSchema")
       .namespace("com.igrafx")
       .fields()
         .name(Constants.kafkaLoggingEventTypeColumnName)
