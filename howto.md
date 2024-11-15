@@ -1214,7 +1214,7 @@ You may check out the [example](#examples-using-the-transpositions-udfs-) to see
 To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the module and run:
 ```
 sbt assembly
-```
+``` 
 The **jar** contains all the UDFs of the project.
 
 Place the newly created `.jar` file (located in the `target/scala-2.13` directory) into the `docker-compose/extensions/` directory of the iGrafx Liveconnect module. If this directory does not exist, create it. Ensure the following lines are included in the `ksqldb-server` configuration in `docker-compose.yml`:
