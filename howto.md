@@ -2,7 +2,8 @@
 
 This document provides guidance on installing and using the **iGrafx Kafka Modules**, which include the **iGrafx LiveConnect**, **iGrafx Connectors**, and **iGrafx UDFs**. It also offers examples and best practices for integrating with your Kafka environment.
 
-The **iGrafx Kafka Modules** are open-source applications designed to enhance your data streaming and integration workflows. These modules enable real-time data processing and transformation, allowing you to connect, enrich, and analyze data across multiple platforms.
+The **iGrafx Kafka Modules** are open-source applications designed to enhance your data streaming and integration workflows.
+These modules enable real-time data processing and transformation, allowing you to connect, enrich, and analyze data and send it to the iGrafx Mining platforms.
 
 Using these modules, you can configure kafka connectors, define custom UDFs (User-Defined Functions), and enable live connections for seamless data streaming and analysis.
 
@@ -11,7 +12,90 @@ Please note that an iGrafx account is required to fully utilize these modules. F
 Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.com/igrafx/miningkafka).
 
 ***
+
 ## Table of Contents
+
+- [Quickstart](#quickstart)
+  - [iGrafx Liveconnect: Quickstart](#igrafx-liveconnect-quickstart)
+  - [ksqlDB CLI and Kafka UI: Quickstart](#ksqldb-cli-and-kafka-ui-quickstart)
+  - [iGrafx Connectors: Quickstart](#igrafx-connectors-quickstart)
+  - [iGrafx UDFs: Quickstart](#igrafx-udfs-quickstart)
+
+- [iGrafx Liveconnect](#igrafx-liveconnect)
+  - [Requirements](#requirements)
+  - [Launching Liveconnect](#launching-liveconnect)
+  - [Installing New Connectors](#installing-new-connectors)
+  - [Recommended Connectors](#recommended-connectors)
+  - [Configuration for a Specific Kafka Topic](#configuration-for-a-specific-kafka-topic)
+  - [Example Configuration for Cross-VM Communication](#example-configuration-for-cross-vm-communication)
+  - [Data-Transform Database](#data-transform-database)
+  - [SFTP Server Configuration](#sftp-server-configuration)
+  - [Connecting to the SFTP Server](#connecting-to-the-sftp-server)
+
+- [Kafka-UI](#kafka-ui)
+
+- [ksqlDB CLI Console](#ksqldb-cli-console)
+
+- [iGrafx Kafka Connectors](#igrafx-kafka-connectors)
+  - [iGrafx Aggregation](#igrafx-aggregation)
+    - [Connector Properties](#connector-properties)
+    - [AVRO](#avro)
+    - [Maximum Message Size](#maximum-message-size)
+  - [iGrafx Aggregation Main (Aggregation and iGrafx Sink Connector)](#igrafx-aggregation-main-aggregation-and-igrafx-sink-connector)
+    - [Connector Properties](#connector-properties-1)
+      - [Mandatory Properties](#mandatory-properties)
+      - [Optional Properties](#optional-properties)
+    - [AVRO](#avro-1)
+    - [iGrafx API](#igrafx-api)
+    - [Kafka Logging Events](#kafka-logging-events)
+
+  - [Connector Commonalities](#connector-commonalities)
+    - [Offset Management](#offset-management)
+    - [Retention](#retention)
+    - [Error Handling](#error-handling)
+    - [Compilation and Deployment on LiveConnect](#compilation-and-deployment-on-liveconnect)
+    - [Creating and Adding a New Connector](#creating-and-adding-a-new-connector)
+    - [Connector Monitoring](#connector-monitoring)
+
+- [iGrafx UDFs](#igrafx-udfs)
+  - [iGrafx Case Events UDF](#igrafx-case-events-udf)
+    - [Overview](#overview)
+    - [UDF Signature and Output Format](#udf-signature-and-output-format)
+  - [iGrafx Sessions UDF](#igrafx-sessions-udf)
+    - [Overview](#overview-1)
+    - [UDF Signature and Output Format](#udf-signature-and-output-format-1)
+  - [iGrafx Transposition UDF](#igrafx-transposition-udf)
+    - [Overview](#overview-2)
+    - [Variation 1](#variation-1)
+    - [Variation 2](#variation-2)
+  - [Compilation and Deployment on LiveConnect](#compilation-and-deployment-on-liveconnect-1)
+
+- [Examples](#examples)
+  - [Basic ksqlDB Example](#basic-ksqldb-example)
+  - [Basic iGrafx Connector Example](#basic-igrafx-connector-example)
+  - [Full Data Pipeline Example](#full-data-pipeline-example)
+    - [Data Pipeline Overview](#data-pipeline-overview)
+    - [Source Files](#source-files)
+    - [Connectors and UDF Installation](#connectors-and-udf-installation)
+    - [Connector for Process Mining Platform](#connector-for-process-mining-platform)
+    - [Connector for CSV Files](#connector-for-csv-files)
+    - [Custom UDFs](#custom-udfs)
+  - [1. Source Connectors](#1-source-connectors)
+  - [2. Streams and Data Transformation](#2-streams-and-data-transformation)
+  - [3. Sending Data to the iGrafx Mining Platform](#3-sending-data-to-the-igrafx-mining-platform)
+  - [Aggregation Connector Examples](#aggregation-connector-examples)
+    - [Example 1](#example-1)
+    - [Example 2](#example-2)
+  - [Grouped Tasks Example with the AggregationMain Connector](#grouped-tasks-example-with-the-aggregationmain-connector)
+  - [Example Using the Case Events UDF](#example-using-the-case-events-udf)
+  - [Example Using the Sessions UDF](#example-using-the-sessions-udf)
+  - [Examples Using the Transpositions UDFs](#examples-using-the-transpositions-udfs-)
+    - [Variation 1](#variation-1-1)
+    - [Variation 2](#variation-2-1)
+    - [3rd UDF Example](#3rd-udf-example)
+
+- [Further Documentation](#further-documentation)
+
 
 
 ## Quickstart
@@ -162,28 +246,6 @@ make liveconnect
 cd docker-compose/
 make liveconnect-down
 ```
-### Recommended Connectors
-
-Below are the installation commands for the recommended connectors:
-
-- **[File System Source Connector](https://www.confluent.io/hub/jcustenborder/kafka-connect-spooldir)**: For loading files in formats such as CSV, JSON, etc.
-    ```bash
-    docker-compose exec connect confluent-hub install --component-dir /connect-plugins/ --verbose jcustenborder/kafka-connect-spooldir:2.0.65
-    ```
-
-- **[JDBC Connector (Source and Sink)](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc)**: For connecting to JDBC-compatible databases.
-    ```bash
-    docker-compose exec connect confluent-hub install --component-dir /connect-plugins/ --verbose confluentinc/kafka-connect-jdbc:10.8.0
-    ```
-
-- **[iGrafx Sink Connector](#igrafx-aggregation-main-aggregation-and-igrafx-sink-connector)**: For sending data from Kafka topics to an iGrafx project.
-
-  You have two options to install the iGrafx Sink connector:
-  1. **Build the Connector Jar**: Follow the instructions in the [iGrafx Connectors section](#compilation-and-deployment-on-liveconnect) to build the connector JAR.
-  2. **Retrieve the Connector Jar from the pipeline**
-
-> Note that you may also download the iGrafx UDFs by following [similar commands](#igrafx-udfs)
-
 ### Installing New Connectors
 
 To add a Kafka connector, place it in the `docker-compose/connect-plugins/` directory, as referenced by the `CONNECT_PLUGIN_PATH` variable in the `docker-compose.yml`.
@@ -197,6 +259,24 @@ After adding a new connector, restart the `liveconnect` Docker container with th
 There are numerous Kafka connectors, including many from the [Camel Kafka ecosystem](https://camel.apache.org/camel-kafka-connector/latest/).
 You may look for them in the [Maven repository](https://mvnrepository.com/) and directly download a **jar** or a **targz** as per your preference.
 You then have to place the **JAR** in the `docker-compose/connect-plugins/` directory.
+
+### Recommended Connectors
+
+Below are the installation commands for the recommended connectors:
+
+- **[File System Source Connector](https://www.confluent.io/hub/jcustenborder/kafka-connect-spooldir)**: For loading files in formats such as CSV, JSON, etc.
+
+
+- **[JDBC Connector (Source and Sink)](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc)**: For connecting to JDBC-compatible databases.
+
+
+- **[iGrafx Sink Connector](#igrafx-aggregation-main-aggregation-and-igrafx-sink-connector)**: For sending data from Kafka topics to an iGrafx project.
+
+  You have two options to install the iGrafx Sink connector:
+  1. **Build the Connector Jar**: Follow the instructions in the [iGrafx Connectors section](#compilation-and-deployment-on-liveconnect) to build the connector JAR.
+  2. **Retrieve the Connector Jar from the pipeline**.
+
+> Note that you may also download the iGrafx UDFs by following [similar commands](#igrafx-udfs).
 
 
 ### Configuration for a Specific Kafka Topic
@@ -301,7 +381,7 @@ You can connect via command line:
 sftp -P 2222 foo@<host-ip>
 ```
 
-### Kafka-UI
+## Kafka-UI
 
 Kafka-UI is a user-friendly graphical interface for managing and interacting with a Kafka/KSQLDB cluster.
 It allows you to view Kafka topic messages, manage connectors, run ksqlDB queries, and monitor various aspects of your Kafka cluster's performance.
@@ -312,7 +392,7 @@ These credentials are configured via the `JAVA_OPTS` variable, where `-Dspring.s
 You can also access Kafka-UI locally by navigating to [http://localhost:9021](http://localhost:9021).
 
 
-### ksqlDB CLI Console
+## ksqlDB CLI Console
 The ksqlDB CLI provides command-line access for managing KSQL commands, viewing connectors, topics, streams, tables, and more.
 
 To access the ksqlDB CLI, use the following command:
@@ -328,9 +408,9 @@ This command sets the offset to the earliest, ensuring that the CLI reads from t
 
 To quit the ksqlDB CLI, type `exit` and press enter.
 
-For further information on ksqlDB CLI configuration, please refer to the documentation at [click here](https://docs.ksqldb.io/en/latest/operate-and-deploy/installation/cli-config/)
+For further information on ksqlDB CLI configuration, please refer to the documentation at [click here](https://docs.ksqldb.io/en/latest/operate-and-deploy/installation/cli-config/).
 
-For further documentation on ksqlDB, please refer to the documentation at [click here](https://ksqldb.io/)
+For further documentation on ksqlDB, please refer to the documentation at [click here](https://ksqldb.io/).
 
 
 ## iGrafx Kafka Connectors:
@@ -466,6 +546,9 @@ If an aggregation exceeds the size set by **max.message.bytes**, the connector w
 
 ### iGrafx Aggregation Main (Aggregation and iGrafx Sink Connector)
 
+* module : aggregationMain
+* package : com.igrafx.kafka.sink.aggregationmain
+
 This connector leverages the aggregation capabilities of the standard aggregation connector (explained in the last section) to combine multiple events, but it also sends the aggregation results directly to the iGrafx Mining API. Typically, before sending data to the iGrafx Mining API, multiple records representing process events are aggregated together, formatted into a CSV file, and then transmitted to the API. The Aggregation iGrafx Sink Connector automates this process.
 
 Using this connector, events are pulled from Kafka, aggregated, and sent as a file to the iGrafx Mining API when a specified threshold is reached per partition. Unlike the standard aggregation connector, this module is dedicated to iGrafx data handling and bypasses Kafka’s message size limitations since the data destination is not a Kafka topic.
@@ -577,7 +660,7 @@ The following properties should be defined only if you want the connector to log
 * **kafkaLoggingEvents.isLogging** (Boolean): Determines if the connector logs file-related events to a Kafka topic (*true/false*). If **true**, events will be logged to a Kafka topic; if **false** (the default), they won’t.
 * **kafkaLoggingEvents.topic** (String): Specifies the Kafka topic name for logging events (*minimum length 1*).
 
-### AVRO Format
+### AVRO
 
 This connector requires data in AVRO format; other formats may lead to errors.
 
@@ -641,8 +724,142 @@ To send the file, follow these two steps:
 
 The Workgroup ID, Workgroup Key, API URL and API Auth URL can be found in the iGrafx workgroup settings, under the **Open API** tab.
 
+### Kafka Logging Events
+The connector has the possibility via its **`kafkaLoggingEvents.sendInformation`**, **`kafkaLoggingEvents.topic`** 
+properties to log file related events in a Kafka topic.
 
-## Connector Commonalities
+The AVRO schema expected for the Logging is the following :
+
+```json
+{
+  "fields": [
+    {
+      "default": null,
+      "name": "EVENT_TYPE",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "name": "IGRAFX_PROJECT",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "name": "EVENT_DATE",
+      "type": [
+        "null",
+        "long"
+      ]
+    },
+    {
+      "default": null,
+      "name": "EVENT_SEQUENCE_ID",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "name": "PAYLOAD",
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  ],
+  "name": "IGrafxKafkaLoggingEventsSchema",
+  "namespace": "io.confluent.ksql.avro_schemas",
+  "type": "record"
+}
+```
+
+An event is composed of :
+
+* an **`eventType`** (String) : currently there are **pushFile** and **issuePushFile**
+* a **`igrafxProject`** (String : UUID) : corresponds to the iGrafx Project ID to which we want to send  (the **projectId** connector's property)
+* an **`eventDate`** (Long) : corresponds to the date of the event
+* an **`eventSequenceId`** (String) : corresponds to the ID of the sequence of events related to a file
+* a **`payload`** (String : JSON) : can contain any information related to a certain event type
+
+To create a STREAM to manipulate those events in ksqlDB there are two possibilities :
+
+* Create the following STREAM before sending any event to the Kafka Logging Events topic (creation of the topic with a correct schema) :
+
+``` 
+CREATE STREAM LOGGING_1 (
+	EVENT_TYPE VARCHAR,
+	IGRAFX_PROJECT VARCHAR,
+	EVENT_DATE BIGINT,
+	EVENT_SEQUENCE_ID VARCHAR,
+	PAYLOAD VARCHAR
+) WITH (
+	KAFKA_TOPIC='event_logging_topic_example', 
+	PARTITIONS=1, 
+	REPLICAS=1, 
+	VALUE_FORMAT='AVRO'
+);
+```
+
+* Create the following STREAM after sending the first events to the Kafka Logging Events topic (the topic needs to exist with a correct schema) :
+
+``` 
+CREATE STREAM LOGGING_2 WITH (
+	KAFKA_TOPIC='journalisation_connecteur_test',
+	VALUE_FORMAT='AVRO'
+);
+```
+
+<hr/>
+
+For now, those 2 events are generated by the connector :
+
+* **pushFile** : event generated when the sending of a file by the connector ended successfully
+
+For this event, the information embedded in the **payload** is : the **file name (filename: String)**, the **event date (date: Long)**, and the **number of lines in the file (lineNumber: Int)**. Here is an example of payload for this event :
+
+``` 
+{
+    "filename": "filename_example",
+    "date": 3446454564,
+    "lineNumber": 100
+}
+```
+
+* **issuePushFile** : event generated when there was an issue during the creation/sending of a file
+
+The information embedded in its **payload** is : the **file name (filename: String)**, the **event date (date: Long)**, and the **exception type (exceptionType: String)** corresponding to the name of the thrown exception. Here is an example of payload for this event :
+
+``` 
+{
+    "filename": "filename_example",
+    "date": 3446454564,
+    "exceptionType": "com.igrafx.kafka.sink.main.domain.exceptions.SendFileException"
+}
+```
+
+<hr/>
+
+Table summarizing the meaning of the different events fields :
+
+|                   | **eventType** |      **igrafxProject**       |                     **eventDate**                      |                                                 **eventSequenceId**                                                  |         **payload**         |
+|-------------------|:-------------:|:----------------------------:|:------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------:|:---------------------------:|
+| **pushFile**      |   pushFile    | The ID of the iGrafx project | The date for which the file has been successfully sent |              MD5 hash of a String containing the source topic/partition/offset of the data in the file               |  filename/date/lineNumber   |
+| **issuePushFile** | issuePushFile | The ID of the iGrafx project |                 The date of the issue                  | MD5 hash of a String containing the source topic/partition/offset of the data that should have been sent in the file | filename/date/exceptionType |
+
+When the sending of the event to Kafka fails, there are two possibilities :
+
+* if the event was an `issuePushFile` event, the exception stopping the Task is the one that occurred during the creation/sending of the file, prior to the event sending issue (but the event's exception is still logged)
+* if the event was a `pushFile` event, the exception stopping the Task is the event's exception
+
+
+### Connector Commonalities
 
 ### Offset Management
 
@@ -678,7 +895,7 @@ To view the logs of the connector, use the following command from the directory 
 ``` 
 docker-compose logs -f connect
 ```
-Here, *connect* refers to the Kafka Connect service name specified in the `docker-compose.yml` file. For more detailed DEBUG-level logs, add the following line to the **CONNECT_LOG4J_LOGGERS** configuration parameter in the **connect** service:
+Here, *`connect`* refers to the Kafka Connect service name specified in the `docker-compose.yml` file. For more detailed DEBUG-level logs, add the following line to the **CONNECT_LOG4J_LOGGERS** configuration parameter in the **connect** service:
 
 ``` 
 com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkTask=DEBUG,com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkConnector=DEBUG
@@ -696,6 +913,32 @@ After compilation, locate the **aggregation-connector_{version}.jar** file (or *
 Copy this file and paste it into the **docker-compose/connect-plugins/** directory in LiveConnect (create this directory if it doesn’t already exist).
 
 Once LiveConnect is launched, the connector will be available for use.
+
+
+### Creating and Adding a New Connector
+
+#### Creating a New Connector
+You can create the source connector either in the ksqlDB CLI or with kafka-ui via :
+
+```
+CREATE SOURCE CONNECTOR ConnectorName WITH (
+...
+);
+```
+
+Or via the following command for a Sink Connector:
+
+```
+CREATE SINK CONNECTOR ConnectorName WITH (
+...
+);
+```
+
+#### Adding a New Connector
+To add a new connector, begin by including a module for it in the module’s **build.sbt** file. Then, create a class for your connector that extends either **SourceConnector** or **SinkConnector**, along with a class that extends **SourceTask** or **SinkTask** to define the tasks for the connector.
+
+Additionally, thoroughly document the connector, detailing its functionality, usage instructions, and configurable properties.
+
 
 ### Connector Monitoring
 
@@ -735,12 +978,6 @@ Moreover, if a worker leaves the cluster, the connectors/tasks associated with t
 If tasks are added or removed, the partitions can also be rebalanced and redistributed among the new number of tasks (partition rebalance).
 
 
-### Adding a New Connector
-
-To add a new connector, begin by including a module for it in the module’s **build.sbt** file. Then, create a class for your connector that extends either **SourceConnector** or **SinkConnector**, along with a class that extends **SourceTask** or **SinkTask** to define the tasks for the connector.
-
-Additionally, thoroughly document the connector, detailing its functionality, usage instructions, and configurable properties.
-
 ## iGrafx UDFs
 
 The **iGrafx UDFs** module offers a set of User-Defined Functions (UDFs) specifically designed to enhance data transformation and analysis within the Kafka ecosystem. These UDFs empower users to perform customized data manipulations and calculations directly in ksqlDB, enabling more efficient and targeted processing for insights and decision-making in real time.
@@ -749,6 +986,8 @@ For more information on ksqlDB UDFs, please refer to the following links:
 
 * https://docs.ksqldb.io/en/latest/reference/user-defined-functions/
 * https://docs.ksqldb.io/en/latest/how-to-guides/create-a-user-defined-function/
+
+To create a new UDF, add a new package for the UDF in the **`src.main.scala.com.igrafx.ksql.functions`** package.
 
 There are several iGrafx UDFs available in the **iGrafx UDFs** module.
 They will be discussed in more detail in the following sections.
@@ -763,14 +1002,14 @@ This User-Defined Function (UDF) retrieves detailed information related to speci
 This function can be particularly useful in process mining and operational analytics, where case-centric data (such as customer journey steps or order fulfillment stages) is essential for generating insights.
 
 #### Overview
-This UDF retrieves information from the **_vertex** Druid DataSource related to a specific `caseId`. The information provided includes:
+This UDF retrieves information from the **`_vertex`** Druid DataSource related to a specific `caseId`. The information provided includes:
 
 * `__time` (start date)
 * `enddate` (end date)
 * `vertex_name` (name of the vertex associated with the case)
 
 
-To get information about this UDF direclty in ksqlDB, use the command :
+To get information about this UDF directly in ksqlDB, use the command :
 
 ``` 
 DESCRIBE FUNCTION IGRAFX_CASE_EVENTS;
@@ -907,9 +1146,10 @@ This function helps to break down complex, aggregated data into a more manageabl
 
 #### Overview
 
-The **Transposition User-Defined Function (UDF)** is a tabular function that enables transposing data within ksqlDB. This function is versatile, providing two different variations to suit a range of data transformation needs.
+The **Transposition User-Defined Function (UDF)** is a **tabular** function that enables transposing data within ksqlDB. This function is versatile, providing two different variations to suit a range of data transformation needs.
 
 Regarding the behavior of the UDF, for both variations, it’s important to be mindful of any additional columns in the initial row.
+You may find a detailed example [here](#examples-using-the-transpositions-udfs-) (example 3).
 
 To get more details about this UDF directly within ksqlDB, you can use the command:
 
@@ -939,6 +1179,8 @@ Both the input and output structures are formatted as follows:
 
 This variation is designed to *explode* a row’s columns, transforming each into multiple rows where each row contains the **Task** and its associated **Timestamp**.
 
+You may check out the [example](#examples-using-the-transpositions-udfs-) to see how the UDF works.
+
 #### Variation 2
 
 **UDF Signature :**
@@ -965,12 +1207,16 @@ The UDF requires the following parameters:
 * **isStartInformation** : **true** indicates that the date associated to the activity corresponds to the beginning of the activity, and that we hence need to calculate the end of the activity. **false** indicates that the date corresponds to the end of the activity meaning we have to calculate its start date (calculations are made when possible in function of the dates of the other activities)
 * **isTaskNameAscending** : **true** indicates that in case of identical dates for two (or more) rows, the order of the rows is determined in an ascending manner according to the activity's name, while **false** means that the order is determined in a descending manner according to the activity's name
 
-#### Compilation and Deployment on LiveConnect
+You may check out the [example](#examples-using-the-transpositions-udfs-) to see how the UDF works.
+
+### Compilation and Deployment on LiveConnect
 
 To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the module and run:
 ```
 sbt assembly
 ```
+The **jar** contains all the UDFs of the project.
+
 Place the newly created `.jar` file (located in the `target/scala-2.13` directory) into the `docker-compose/extensions/` directory of the iGrafx Liveconnect module. If this directory does not exist, create it. Ensure the following lines are included in the `ksqldb-server` configuration in `docker-compose.yml`:
 
 ``` 
@@ -985,7 +1231,7 @@ ksqldb-server:
 
 Once LiveConnect is launched, the connector will be available for use.
 
-We can then connect to the ksqlDB CLI, from the ``docker-compose/`` repository of Liveconnect, with the command :
+We can connect to the ksqlDB CLI, from the ``docker-compose/`` repository of Liveconnect, with the command :
 
 ``` 
 docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
@@ -1307,11 +1553,11 @@ The connector is named `SpoolDirCsvSourceConnector`. You can download it by clic
 
 After downloading, extract the contents of the archive and place them in the `docker-compose/connect-plugins` folder of the Liveconnect project.
 
-##### Custom UDFs
+#### Custom UDFs
 You can install the custom UDFs by following the steps described in the [iGrafx UDFs](#igrafx-udfs) section of this document.
 
 
-### 1) Source Connectors
+### 1. Source Connectors
 Launch Liveconnect with the connectors JARs and the Jira/Snow files placed in the appropriate folders. Once it is running, enter the following requests using ksql (either via the ksql CLI or a graphical UI).
 
 **Important:** The two connectors created below must have at least one file to load into Kafka upon creation. Otherwise, the connector creation will return an error.
@@ -1372,7 +1618,7 @@ CREATE SOURCE CONNECTOR snow_k WITH (
 ```
 This connector reads all files matching the `^snow_._stream\.csv$` pattern located in the `/data/snow` folder. After processing a file, it is moved to either the `/data/processed` folder or the `/data/error` folder, depending on the success of the operation. The data from the processed files is stored in the `snow_k` Kafka topic. In this example, the connector loads data from the `snow_0_stream.csv` file into the corresponding Kafka topic.
 
-### 2) Streams and Data Transformation
+### 2. Streams and Data Transformation
 Let us create the necessary Streams on top of Kafka topics.
 
 To do that, we create a ksqlDB stream on top of the Kafka topic that has been created by the Jira Connector:
@@ -1607,7 +1853,7 @@ insert INTO SNOW_JIRA_UNION_00 SELECT * FROM SNOW_JIRA_01 EMIT CHANGES;
 SELECT * FROM SNOW_JIRA_UNION_00 EMIT CHANGES;
 `````
 
-### 3) Sending data to the iGrafx Mining platform
+### 3. Sending data to the iGrafx Mining platform
 
 The last stream is used to prepare the data for the connector in the correct format.
 
@@ -1676,16 +1922,1019 @@ CREATE SINK CONNECTOR IGrafxConnectorCM WITH (
 As there are less than 6575 events, the timeout threshold will be used, and the data will be sent to the Process Mining Platform after 20 seconds. 
 
 
+### Aggregation Connector Examples
+For the following 2 examples the **``threshold.valuePattern``** property is not set, so the aggregation is only made according to the **``threshold.elementNumber``** and **``threshold.timeoutInSeconds``** properties.
+
+#### Example 1
+First, start by using the following command to apply modifications of a STREAM on data inserted before the creation or display of the STREAM :
+
+``` 
+SET 'auto.offset.reset'='earliest';
+```
+
+In this first example, we will simply aggregate messages with a single column of type :
+
+``` 
+line VARCHAR
+```
+
+Therefore, the first command to write in ksqlDB creates the STREAM that will feed the aggregation connector with data :
+
+``` 
+CREATE STREAM INPUT_DATA (
+	line VARCHAR
+) WITH (
+	KAFKA_TOPIC='aggregation_input', 
+	PARTITIONS=1, 
+	REPLICAS=1, 
+	VALUE_FORMAT='AVRO'
+);
+```
+
+We then add a STREAM over the output topic to manipulate the aggregated data
+Remember to use : **aggregationColumnName** ``ARRAY<STRUCT<...[INPUT_DATA columns]...>>`` :
+
+``` 
+CREATE STREAM OUTPUT_DATA (
+	LINEAG ARRAY<STRUCT<LINE VARCHAR>>
+) WITH (
+	KAFKA_TOPIC='aggregation_output', 
+	PARTITIONS=1, 
+	REPLICAS=1, 
+	VALUE_FORMAT='AVRO'
+);
+```
+
+We can then create the connector with the correct **``aggregationColumnName``** :
+
+``` 
+CREATE SINK CONNECTOR AggregationConnectorTest WITH (
+    'connector.class' = 'com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkConnector', 
+    'tasks.max' = '1',
+    'topics' = 'aggregation_input',
+    'topicOut' = 'aggregation_output',
+    'aggregationColumnName' = 'LINEAG',
+    'threshold.elementNumber' = '6',
+    'threshold.timeoutInSeconds' = '30',
+    'bootstrap.servers' = 'broker:29092',
+    'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'value.converter' = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url' = 'http://schema-registry:8081'
+);
+```
+
+And insert new data to aggregate :
+
+``` 
+INSERT INTO INPUT_DATA (line) VALUES ('2020-06-16T04;1;appli1;Start');
+INSERT INTO INPUT_DATA (line) VALUES ('2020-06-16T04;1;appli1;event1');
+INSERT INTO INPUT_DATA (line) VALUES ('2020-06-16T04;1;appli1;End');
+INSERT INTO INPUT_DATA (line) VALUES ('2020-06-16T04;2;appli2;Start');
+INSERT INTO INPUT_DATA (line) VALUES ('2020-06-16T04;2;appli2;event2');
+INSERT INTO INPUT_DATA (line) VALUES ('2020-06-16T04;2;appli2;End');
+INSERT INTO INPUT_DATA (line) VALUES ('2020-06-16T04;3;appli3;Start');
+```
+
+The *``OUTPUT_DATA``* STREAM contains the results of the aggregation, results which we can display via :
+
+``` 
+SELECT * FROM OUTPUT_DATA EMIT CHANGES;
+```
+
+To then break down the generated ``STRUCT`` and only manipulate an ``ARRAY<VARCHAR>``, we can use the following command 
+> This is only possible with the versions 0.17.0 or higher of ksqlDB :
+
+``` 
+CREATE STREAM CORRECT_DATA AS SELECT transform(LINEAG, s => s->LINE) AS LINEAG FROM OUTPUT_DATA EMIT CHANGES;
+```
+
+Furthermore, we can display its results with :
+
+``` 
+SELECT * FROM CORRECT_DATA EMIT CHANGES;
+```
+
+With this example, the data in the **``INPUT_DATA``** STREAM corresponds to :
+
+|             LINE              |                                                                                        
+|:-----------------------------:|
+| 2020-06-16T04;1;appli1;Start  | 
+| 2020-06-16T04;1;appli1;event1 |
+|  2020-06-16T04;1;appli1;End   |
+| 2020-06-16T04;2;appli2;Start  |
+| 2020-06-16T04;2;appli2;event2 |
+|  2020-06-16T04;2;appli2;End   |
+| 2020-06-16T04;3;appli3;Start  | 
+
+After the aggregation, the result in the **OUTPUT_DATA** STREAM should be as follows 
+>The second row only appears after 30 seconds, which corresponds to the **threshold.timeoutInSeconds** property :
+
+|                                                                                                            LINEAG                                                                                                            |                                                                                        
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| [{LINE=2020-06-16T04;1;appli1;Start}, {LINE=2020-06-16T04;1;appli1;event1}, {LINE=2020-06-16T04;1;appli1;End}, {LINE=2020-06-16T04;2;appli2;Start}, {LINE=2020-06-16T04;2;appli2;event2}, {LINE=2020-06-16T04;2;appli2;End}] | 
+|                                                                                            [{LINE=2020-06-16T04;3;appli3;Start}]                                                                                             |
+
+And the result in the **``CORRECT_DATA``** STREAM should be :
+
+|                                                                                       LINEAG                                                                                       |                                                                                        
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| [2020-06-16T04;1;appli1;Start, 2020-06-16T04;1;appli1;event1, 2020-06-16T04;1;appli1;End, 2020-06-16T04;2;appli2;Start, 2020-06-16T04;2;appli2;event2, 2020-06-16T04;2;appli2;End] | 
+|                                                                           [2020-06-16T04;3;appli3;Start]                                                                           |
+
+Here, the first row corresponds to the aggregation of the first 6 lines of **``INPUT_DATA``** as the **``threshold.elementNumber``** property of the connector was equal to 6, 
+and the second row corresponds to the aggregation of the last line of **``INPUT_DATA``** as the **``threshold.timeoutInSeconds``** property of the connector is equal to 30 and in the 30 seconds that followed the flush of the first result, only "``2020-06-16T04;3;appli3;Start``" was received by the connector.
+
+When the testing is done, you can delete the connector with :
+
+``` 
+DROP CONNECTOR AGGREGATIONCONNECTORTEST;
+```
+#### Example 2
+
+First, start by using the following command to apply modifications of a STREAM on data inserted before the creation or display of the STREAM :
+
+``` 
+SET 'auto.offset.reset'='earliest';
+```
+
+In this second example, we will aggregate messages with a single column of type in order to show how the aggregation works on a more complex type, 
+but the principles are the same as the latter example:
+
+``` 
+dataArray ARRAY<STRUCT<columnID INT, text VARCHAR, quote BOOLEAN>>
+```
+
+The first command to write in ksqlDB creates the STREAM that will feed the aggregation connector with data :
+
+``` 
+CREATE STREAM INPUT_DATA2 (
+	dataArray ARRAY<STRUCT<columnID INT, text VARCHAR, quote BOOLEAN>>
+) WITH (
+	KAFKA_TOPIC='aggregation_input2', 
+	PARTITIONS=1, 
+	REPLICAS=1, 
+	VALUE_FORMAT='AVRO'
+);
+```
+
+We then add a STREAM over the output topic to manipulate the aggregated data. 
+Remember to use : **aggregationColumnName** ``ARRAY<STRUCT<...[INPUT_DATA columns]...>>`` :
+
+``` 
+CREATE STREAM OUTPUT_DATA2 (
+	LINEAG ARRAY<STRUCT<DATAARRAY ARRAY<STRUCT<columnID INT, text VARCHAR, quote BOOLEAN>>>>
+) WITH (
+	KAFKA_TOPIC='aggregation_output2', 
+	PARTITIONS=1, 
+	REPLICAS=1, 
+	VALUE_FORMAT='AVRO'
+);
+```
+
+We can then create the connector with the correct **aggregationColumnName**:
+
+``` 
+CREATE SINK CONNECTOR AggregationConnectorTest2 WITH (
+    'connector.class' = 'com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkConnector', 
+    'tasks.max' = '1',
+    'topics' = 'aggregation_input2',
+    'topicOut' = 'aggregation_output2',
+    'aggregationColumnName' = 'LINEAG',
+    'threshold.elementNumber' = '3',
+    'threshold.timeoutInSeconds' = '30',
+    'bootstrap.servers' = 'broker:29092',
+    'key.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+    'value.converter' = 'io.confluent.connect.avro.AvroConverter',
+    'value.converter.schema.registry.url' = 'http://schema-registry:8081'
+);
+```
+
+And insert new data to aggregate :
+
+``` 
+INSERT INTO INPUT_DATA2 (dataArray) VALUES (ARRAY[STRUCT(columnId := 0, text := '3', quote := false), STRUCT(columnId := 1, text := 'A', quote := true), STRUCT(columnId := 2, text := '10/10/10 08:05', quote := false), STRUCT(columnId := 3, text := '10/10/10 08:10', quote := false)]);
+INSERT INTO INPUT_DATA2 (dataArray) VALUES (ARRAY[STRUCT(columnId := 0, text := '3', quote := false), STRUCT(columnId := 1, text := 'B', quote := true), STRUCT(columnId := 2, text := '10/10/10 08:15', quote := false), STRUCT(columnId := 3, text := '10/10/10 08:16', quote := false)]);
+INSERT INTO INPUT_DATA2 (dataArray) VALUES (ARRAY[STRUCT(columnId := 0, text := '3', quote := false), STRUCT(columnId := 1, text := 'C', quote := true), STRUCT(columnId := 2, text := '10/10/10 08:16', quote := false), STRUCT(columnId := 3, text := '10/10/10 08:17', quote := false)]);
+INSERT INTO INPUT_DATA2 (dataArray) VALUES (ARRAY[STRUCT(columnId := 0, text := '3', quote := false), STRUCT(columnId := 1, text := 'D', quote := true), STRUCT(columnId := 2, text := '10/10/10 08:26', quote := false), STRUCT(columnId := 3, text := '10/10/10 08:27', quote := false)]);
+INSERT INTO INPUT_DATA2 (dataArray) VALUES (ARRAY[STRUCT(columnId := 0, text := '3', quote := false), STRUCT(columnId := 1, text := 'E', quote := true), STRUCT(columnId := 2, text := '10/10/10 08:29', quote := false), STRUCT(columnId := 3, text := '10/10/10 08:31', quote := false)]);
+INSERT INTO INPUT_DATA2 (dataArray) VALUES (ARRAY[STRUCT(columnId := 0, text := '3', quote := false), STRUCT(columnId := 1, text := 'F', quote := true), STRUCT(columnId := 2, text := '10/10/10 08:29', quote := false), STRUCT(columnId := 3, text := '10/10/10 08:31', quote := false)]);
+INSERT INTO INPUT_DATA2 (dataArray) VALUES (ARRAY[STRUCT(columnId := 0, text := '3', quote := false), STRUCT(columnId := 1, text := 'G', quote := true), STRUCT(columnId := 2, text := '10/10/10 08:31', quote := false), STRUCT(columnId := 3, text := '10/10/10 08:32', quote := false)]);
+```
+
+The *``OUTPUT_DATA2``* STREAM contains the results of the aggregation, results we can display via :
+
+``` 
+SELECT * FROM OUTPUT_DATA2 EMIT CHANGES;
+```
+
+To then break down the generated ``STRUCT`` and only manipulate an ``ARRAY<ARRAY<STRUCT<columnID INT, text VARCHAR, quote BOOLEAN>>>``, 
+we can use the following command 
+> It is only possible with the versions 0.17.0 or higher of ksqlDB :
+
+``` 
+CREATE STREAM CORRECT_DATA2 AS SELECT transform(LINEAG, s => s->DATAARRAY) AS LINEAG FROM OUTPUT_DATA2 EMIT CHANGES;
+```
+
+Now, we can display its result with :
+
+``` 
+SELECT * FROM CORRECT_DATA2 EMIT CHANGES;
+```
+
+With this example, the data in the **``INPUT_DATA2``** STREAM corresponds to :
+
+|                                                                               DATAARRAY                                                                               |                                                                                        
+|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=A, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:05, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:10, QUOTE=false}] | 
+| [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=B, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:15, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:16, QUOTE=false}] |
+| [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=C, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:16, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:17, QUOTE=false}] |
+| [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=D, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:26, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:27, QUOTE=false}] |
+| [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=E, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:29, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:31, QUOTE=false}] |
+| [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=F, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:29, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:31, QUOTE=false}] |
+| [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=G, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:31, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:32, QUOTE=false}] | 
+
+After the aggregation, the result in the **``OUTPUT_DATA2``** STREAM should be as follows.
+The third row only appears after 30 seconds, which corresponds to the **``threshold.timeoutInSeconds``** property :
+
+|                                                                                                                                                                                                                                                                          LINEAG                                                                                                                                                                                                                                                                           |                                                                                        
+|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| [{DATAARRAY=[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=A, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:05, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:10, QUOTE=false}]}, {DATAARRAY=[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=B, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:15, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:16, QUOTE=false}]}, {DATAARRAY=[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=C, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:16, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:17, QUOTE=false}]}] |
+| [{DATAARRAY=[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=D, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:26, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:27, QUOTE=false}]}, {DATAARRAY=[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=E, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:29, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:31, QUOTE=false}]}, {DATAARRAY=[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=F, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:29, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:31, QUOTE=false}]}] |
+|                                                                                                                                                                                    [{DATAARRAY=[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=G, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:31, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:32, QUOTE=false}]}]                                                                                                                                                                                    |
+
+Finally, the result in the **``CORRECT_DATA2``** STREAM should be :
+
+|                                                                                                                                                                                                                                                        LINEAG                                                                                                                                                                                                                                                         |                                                                                        
+|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| [[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=A, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:05, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:10, QUOTE=false}], [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=B, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:15, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:16, QUOTE=false}], [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=C, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:16, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:17, QUOTE=false}]] | 
+| [[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=D, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:26, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:27, QUOTE=false}], [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=E, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:29, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:31, QUOTE=false}], [{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=F, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:29, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:31, QUOTE=false}]] |
+|                                                                                                                                                                        [[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=G, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:31, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:32, QUOTE=false}]]                                                                                                                                                                        |
+
+Here, the first two rows correspond to the aggregation of the first 6 lines of **``INPUT_DATA2``** as the **``threshold.elementNumber``** property of the connector was equal to 3 (so it makes 2 rows with 3 lines in each aggregation), and the third row corresponds to the aggregation of only the last line of **INPUT_DATA2** as the **threshold.timeoutInSeconds** property of the connector is equal to 30 and in the 30 seconds that followed the flush of the first result, only "[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=G, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:31, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:32, QUOTE=false}]" was received by the connector
+
+Here, the first two rows correspond to the aggregation of the first six lines of **`INPUT_DATA2`** because the **`threshold.elementNumber`** property of the connector was set to 3. This results in two rows with three lines in each aggregation. The third row corresponds to the aggregation of only the last line of **`INPUT_DATA2`**, as the **`threshold.timeoutInSeconds`** property of the connector is set to 30. Within the 30 seconds following the flush of the first result, only `"[{COLUMNID=0, TEXT=3, QUOTE=false}, {COLUMNID=1, TEXT=G, QUOTE=true}, {COLUMNID=2, TEXT=10/10/10 08:31, QUOTE=false}, {COLUMNID=3, TEXT=10/10/10 08:32, QUOTE=false}]"` was received by the connector.
 
 
+When the testing is done, you can delete the connector with :
+
+``` 
+DROP CONNECTOR AGGREGATIONCONNECTORTEST2;
+```
+
+### Grouped Tasks Example with the AggregationMain Connector
+While defining the Column Mapping (when **``columnMapping.create``** equals **true**), 
+we can also optionally define, with the **``columnMapping.groupedTasksColumns``** property, 
+a set of columns to use for grouping events that have the same value (in the defined columns) together. 
+The events are grouped within their case, and grouped tasks aggregations need to be defined for the dimensions and metrics.
+
+The idea of this functionality is to regroup several similar events into only one event.
 
 
+Let's take the following events as an example :
+
+| **CaseId** | **Activity** | **StartDate**  |  **EndDate**   | **Country** | **City** | **Price** |
+|:-----------|:------------:|:--------------:|:--------------:|:-----------:|:--------:|:---------:|
+| 1          |      A       | 10/10/10 08:38 | 11/10/10 08:38 |   France    |  Paris   |    10     |    
+| 1          |      B       | 10/10/10 09:40 | 11/10/10 09:40 |   Germany   |  Berlin  |    20     |
+| 1          |      A       | 10/10/10 10:42 | 11/10/10 10:42 |   France    | Toulouse |    30     |
+| 1          |      C       | 10/10/10 11:50 | 11/10/10 11:50 |   Germany   |  Munich  |    10     |
+| 1          |      C       | 10/10/10 12:50 | 11/10/10 12:50 |   Germany   | Hamburg  |    20     |
+| 2          |      A       | 10/10/10 08:20 | 11/10/10 08:20 |   France    |  Rennes  |     5     |
+| 2          |      B       | 10/10/10 09:30 | 11/10/10 09:30 |   Germany   |  Berlin  |    10     |
+| 2          |      A       | 10/10/10 10:40 | 11/10/10 10:40 |   France    | Bordeaux |    25     |
+| 2          |      A       | 10/10/10 11:50 | 11/10/10 11:50 |     USA     | New York |    10     |
+
+And let's say that the column mapping properties of the connector look like this :
+
+```
+columnMapping.create = "true",
+columnMapping.caseIdColumnIndex = "0",
+columnMapping.activityColumnIndex = "1",
+columnMapping.timeInformationList = "{2;dd/MM/yy HH:mm},{3;dd/MM/yy HH:mm}",
+columnMapping.dimensionsInformationList = "[{"columnIndex": 4, "name": "Country", "isCaseScope": false, "groupedTasksAggregation": "FIRST"},{"columnIndex": 5, "name": "City", "isCaseScope": false, "groupedTasksAggregation": "FIRST"}]",
+columnMapping.metricsInformationList = "[{"columnIndex": 6, "name": "Price", "unit": "Euros", "isCaseScope": true, "aggregation": "MIN", "groupedTasksAggregation": "AVG"}]",
+columnMapping.groupedTasksColumns = "[1, 4]"
+```
+
+Here the columns to use for grouping are the ones matching the indexes 1 and 4 which are respectively the Activity and Country columns. 
+They are defined through the **``columnMapping.groupedTasksColumns``** property.
+
+When **``columnMapping.groupedTasksColumns``** is defined, we also need to define the **``groupedTasksAggregation``** argument for each dimension/metric. 
+
+With this example, here are the grouped tasks aggregations defined for the dimension and metric columns:
+* **FIRST** for the **Country** dimension column
+* **FIRST** for the **City** dimension column
+* **AVG** for the **Price** metric column
+
+For the dimension columns the valid grouped tasks aggregation values are 
+- **FIRST**
+- **LAST**  
+
+For the metric columns the valid grouped tasks aggregation values are 
+- **FIRST**
+- **LAST**
+- **MIN**
+- **MAX**
+- **SUM**
+- **AVG**
+- **MEDIAN**
+
+Consequently, within a case, all the events that have the same values for the **Activity** and **Country** columns will be grouped together, 
+and the new values for the dimension and metric columns are computed according to their related *`groupedTasksAggregation`*.
+
+If the timestamp columns are not defined in the columns to use for grouping (here columns 2 and 3 are not defined in the **`columnMapping.groupedTasksColumns`** property), 
+we don't have to define an aggregation as for the dimension or metrics:
+* The lowest timestamp of all the events of a group will be used as the new start timestamp of the new single event.
+* The highest timestamp of all the events of a group will be used as the new end timestamp of the new single event.
+
+After the creation of the connector, a Mining project that has the column mapping defined above will receive those events and will regroup some of them in the following way:
+
+**For CaseId 1**:
+* The first and third events of this case have the same values for their **Activity (A)** and **Country (France)** columns. Consequently, they are grouped together to only make one event of activity A and of country France.
+* The second event is not grouped, as no other event in this case has an Activity named B and a Country named Germany.
+* The fourth and fifth events of this case  have the same values for their **Activity (C)** and **Country (Germany)** columns. Consequently, they are grouped together to only make one event of activity C and of country Germany.
+
+**For CaseId 2**:
+* The first and third events of this case have the same values for their **Activity (A)** and **Country (France)** columns. Consequently, they are grouped together to only make one event of activity A and of country France.
+* The second event is not grouped, as no other event in this case has an Activity named B and a Country named Germany.
+* The fourth event is not grouped, it has the same **Activity (A)** as the first and third events, but its **Country (USA)** is different.
+
+After grouping the similar events together, it gives us this list of events:
+
+| **CaseId** | **Activity** | **StartDate**  |  **EndDate**   | **Country** | **City** | **Price** |
+|:-----------|:------------:|:--------------:|:--------------:|:-----------:|:--------:|:---------:|
+| 1          |      A       | 10/10/10 08:38 | 11/10/10 10:42 |   France    |  Paris   |    20     |    
+| 1          |      B       | 10/10/10 09:40 | 11/10/10 09:40 |   Germany   |  Berlin  |    20     |
+| 1          |      C       | 10/10/10 11:50 | 11/10/10 12:50 |   Germany   |  Munich  |    15     |
+| 2          |      A       | 10/10/10 08:20 | 11/10/10 10:40 |   France    |  Rennes  |    15     |
+| 2          |      B       | 10/10/10 09:30 | 11/10/10 09:30 |   Germany   |  Berlin  |    10     |
+| 2          |      A       | 10/10/10 11:50 | 11/10/10 11:50 |     USA     | New York |    10     |
+
+**For CaseId 1**:
+* The **first** event of this case in the new list of events was created by grouping the first and third events of this case in the initial list of events (before grouping).
+  * CaseId was **1** for the two events that were grouped, so it stays at **1** for the new single event.
+  * Activity was **A** for the two events that were grouped, so it stays at **A** for the new single event.
+  * StartDate was **10/10/10 08:38** for the first event that was grouped, and **10/10/10 10:42** for the second one. The lowest timestamp (**10/10/10 08:38**) is used as the start timestamp of the new single event.
+  * EndDate was **11/10/10 08:38** for the first event that was grouped, and **11/10/10 10:42** for the second one. The highest timestamp (**11/10/10 10:42**) is used as the end timestamp of the new single event.
+  * Country was **France** for the two events that were grouped, so it stays at **France** for the new single event.
+  * City was **Paris** for the first event that was grouped, and **Toulouse** for the second one. In the column mapping, **FIRST** was defined as the *groupedTasksAggregation* for this dimension, consequently, as **Paris** is the first value to come, it is the one used for the new single event.
+  * Price was **10** for the first event that was grouped, and **30** for the second one. In the column mapping, **AVG** was defined as the *groupedTasksAggregation* for this metric, consequently, **20** is the value of this metric for the new single event (20 being the result of the average of 10 and 30).
 
 
+* The **second** event of this case in the new list of events is identical to the second event of this case in the initial list of events (before grouping), as we couldn't group it with other events.
 
 
+* The **third** event of this case in the new list of events was created by grouping the fourth and fifth events of this case in the initial list of events (before grouping).
+  * CaseId was **1** for the two events that were grouped, so it stays at **1** for the new single event.
+  * Activity was **C** for the two events that were grouped, so it stays at **C** for the new single event.
+  * StartDate was **10/10/10 11:50** for the first event that was grouped, and **10/10/10 12:50** for the second one. The lowest timestamp (**10/10/10 11:50**) is used as the start timestamp of the new single event.
+  * EndDate was **11/10/10 11:50** for the first event that was grouped, and **11/10/10 12:50** for the second one. The highest timestamp (**11/10/10 12:50**) is used as the end timestamp of the new single event.
+  * Country was **Germany** for the two events that were grouped, so it stays at **Germany** for the new single event.
+  * City was **Munich** for the first event that was grouped, and **Hamburg** for the second one. In the column mapping, **FIRST** was defined as the *groupedTasksAggregation* for this dimension, consequently, as **Munich** is the first value to come, it is the one used for the new single event.
+  * Price was **10** for the first event that was grouped, and **20** for the second one. In the column mapping, **AVG** was defined as the *groupedTasksAggregation* for this metric, consequently, **15** is the value of this metric for the new single event (15 being the result of the average of 10 and 20).
+
+**For CaseId 2**:
+* The **first** event of this case in the new list of events was created by grouping the first and third events of this case in the initial list of events (before grouping).
+  * CaseId was **2** for the two events that were grouped, so it stays at **2** for the new single event.
+  * Activity was **A** for the two events that were grouped, so it stays at **A** for the new single event.
+  * StartDate was **10/10/10 08:20** for the first event that was grouped, and **10/10/10 10:40** for the second one. The lowest timestamp (**10/10/10 08:20**) is used as the start timestamp of the new single event.
+  * EndDate was **11/10/10 08:20** for the first event that was grouped, and **11/10/10 10:40** for the second one. The highest timestamp (**11/10/10 10:40**) is used as the end timestamp of the new single event.
+  * Country was **France** for the two events that were grouped, so it stays at **France** for the new single event.
+  * City was **Rennes** for the first event that was grouped, and **Bordeaux** for the second one. In the column mapping, **FIRST** was defined as the *groupedTasksAggregation* for this dimension, consequently, as **Rennes** is the first value to come, it is the one used for the new single event.
+  * Price was **5** for the first event that was grouped, and **25** for the second one. In the column mapping, **AVG** was defined as the *groupedTasksAggregation* for this metric, consequently, **15** is the value of this metric for the new single event (15 being the result of the average of 5 and 25).
+* The **second** event of this case in the new list of events is identical to the second event of this case in the initial list of events (before grouping), as we couldn't group it with other events.
+* The **third** event of this case in the new list of events is identical to the fourth event of this case in the initial list of events (before grouping), as we couldn't group it with other events.
+
+This new list of events is then used as the data in the Mining project.
+
+As a side note, if for the same initial list of events we don't want to group any events together, the column mapping should be:
+
+```
+columnMapping.create = "true",
+columnMapping.caseIdColumnIndex = "0",
+columnMapping.activityColumnIndex = "1",
+columnMapping.timeInformationList = "{2;dd/MM/yy HH:mm},{3;dd/MM/yy HH:mm}",
+columnMapping.dimensionsInformationList = "[{"columnIndex": 4, "name": "Country", "isCaseScope": false},{"columnIndex": 5, "name": "City", "isCaseScope": false}]",
+columnMapping.metricsInformationList = "[{"columnIndex": 6, "name": "Price", "unit": "Euros", "isCaseScope": true, "aggregation": "MIN"}]"
+```
+
+**Remarks regarding the Column Mapping for grouped tasks**
+
+* An error will appear at the creation of the connector if the **`columnMapping.groupedTasksColumns`** property is defined but doesn't contain at least one column index of a time or dimension or metric column.
+* An error will appear at the creation of the connector if the **`columnMapping.groupedTasksColumns`** property is defined but not the **groupedTasksAggregation** argument of **all** the dimensions and/or metrics.
+* An error will appear at the creation of the connector if the **`columnMapping.groupedTasksColumns`** property is not defined but at least one dimension/metric defined its **groupedTasksAggregation** argument.
+
+* If the **`columnMapping.groupedTasksColumns`** property is defined without the column index of the activity column, the connector will automatically add it to the set of grouped tasks columns indexes that is sent to the Mining.
+* If the **`columnMapping.groupedTasksColumns`** property is defined with the column index of the caseId column, the connector will automatically remove it from the set of grouped tasks columns indexes that is sent to the Mining.
+
+### Example using the Case Events UDF
+
+Start by using the following command to apply modifications of a STREAM on data inserted before the creation or display of the STREAM :
+
+``` 
+SET 'auto.offset.reset'='earliest';
+```
+
+First we need to create the initial STREAM storing the **caseId** for which we want to get information :
+
+```
+CREATE STREAM s1 (
+  caseId VARCHAR
+  ) WITH (
+  kafka_topic = 's1',
+  partitions = 1,
+  value_format = 'avro'
+  );
+```
+
+Then we need to create the STREAM that is going to call to the UDF.
+Here the UDF parameters are given as an example and can be modified, except for the **caseId**, as it must match that of the **caseId column** of the previous STREAM.
+
+``` 
+CREATE STREAM s2 AS SELECT 
+    caseId, 
+    igrafx_case_events(caseId, '8968a61c-1fb5-4721-9a8b-d09198eef06b', 'druid_system', <Authentication>', 'https://mining-api.dev2.igrafxcloud.com', '8082') AS informations 
+    FROM s1 EMIT CHANGES;
+```
+
+Moreover, we then need to insert a **caseID** for which we want to get information. 
+In order to retrieve information for a given **caseId**, the **caseId** needs to exist in the iGrafx project.
+
+``` 
+INSERT INTO s1 (caseId) VALUES ('3');
+```
+
+Finally, we can display the final result.
+
+```` 
+SELECT caseId, informations FROM s2 EMIT CHANGES;
+````
+
+### Example using the Sessions UDF
+Start by using the following command to apply modifications of a STREAM on data inserted before the creation or display of the STREAM :
+
+``` 
+SET 'auto.offset.reset'='earliest';
+```
+
+Let us consider the following collection of rows :
+
+| timeStamp     | userID | targetApp |  eventType  |
+|---------------|:------:|:---------:|:-----------:|
+| 2020-06-16T04 |   1    |  appli1   |    Start    | 
+| 2020-06-16T04 |   1    |  appli1   |   event1    | 
+| 2020-06-16T04 |   1    |  appli1   |   event2    |
+| 2020-06-16T04 |   2    |  appli1   |    Start    | 
+| 2020-06-16T04 |   2    |  appli1   |   event4    | 
+| 2020-06-16T04 |   2    |  appli2   |    Start    | 
+| 2020-06-16T04 |   2    |  appli3   |   event5    | 
+| 2020-06-16T04 |   1    |  appli1   |   event3    | 
+| 2020-06-16T04 |   1    |  appli1   | ignoreEvent | 
+| 2020-06-16T04 |   1    |  appli1   |     End     | 
+| 2020-06-16T04 |   1    |  appli2   | aloneEvent1 | 
+| 2020-06-16T04 |   1    |  appli2   | aloneEvent2 | 
+| 2020-06-16T04 |   2    |  appli2   |   event6    | 
+| 2020-06-16T04 |   2    |  appli2   |     End     |
+| 2020-06-16T04 |   2    |  appli2   |   event7    | 
+| 2020-06-16T04 |   2    |  appli3   |     End     |
 
 
+The first STREAM to create in ksqlDB is the following, where each row is present in the **lines** array:
+
+``` 
+CREATE STREAM s1 (
+	lines ARRAY<VARCHAR>
+) WITH (
+	kafka_topic = 's1',
+	partitions = 1,
+	value_format = 'avro'
+);
+```
+
+It is then possible to insert data :
+
+``` 
+INSERT INTO s1 (lines) VALUES (ARRAY[
+    '2020-06-16T04;1;appli1;Start', 
+    '2020-06-16T04;1;appli1;event1', 
+    '2020-06-16T04;1;appli1;event2', 
+    '2020-06-16T04;2;appli1;Start', 
+    '2020-06-16T04;2;appli1;event4', 
+    '2020-06-16T04;2;appli2;Start', 
+    '2020-06-16T04;2;appli3;event5',
+    '2020-06-16T04;1;appli1;event3', 
+    '2020-06-16T04;1;appli1;ignoreEvent', 
+    '2020-06-16T04;1;appli1;End', 
+    '2020-06-16T04;1;appli2;aloneEvent1', 
+    '2020-06-16T04;1;appli2;aloneEvent2',  
+    '2020-06-16T04;2;appli2;event6', 
+    '2020-06-16T04;2;appli2;End' , 
+    '2020-06-16T04;2;appli2;event7', 
+    '2020-06-16T04;2;appli3;End']);
+```
+
+Now, everything is ready to call the UDF.
+
+In this example, the rows verifying :
+
+* **ignorePattern** = `.\*;.\*;.*;ignoreEvent` are **ignored**
+* **startSessionPattern** = `.\*;.\*;.*;Start` matches to the **start of a new session**
+* **endSessionPattern** = `.\*;.\*;.*;End` matches to the **end of the current session**
+
+Furthermore, the rows follow the format **`timeStamp;userID;targetApp;eventType`**.
+
+The group pattern used in the examples is :
+
+* **`groupSessionPattern`** = `.\*;(.\*);.\*;.*`, meaning that rows are divided into groups according to the value of the `userID` column.
+
+Moreover, the pattern used to create the `sessionId` of a session starting row is :
+
+* **`sessionIdPattern`** = `.\*;(.\*);(.\*);.*` meaning that for a session starting row the `sessionId` will be calculated according to the values of the `userID` and `targetApp` columns.
+
+Thus, in function of the **`isSessionIdHash`** value, the following `sessionId1`,`sessionId2`,`sessionId3`,`sessionId4` 
+will correspond either to the concatenation of the `userId` and `targetApp` columns, 
+or to the hashed value of the concatenation of the `userId` and `targetApp` columns 
+(these specific columns because they are described by **`sessionIdPattern`** = `.*;(.*);(.*);.*`)
+
+Numerous combinations for the **`igrafx_sessions`** functions are possible :
+
+* **`isIgnoreIfNoStart = true`** and **`isIgnoreIfNoEnd = true`**
+
+``` 
+CREATE STREAM s2 AS SELECT 
+    igrafx_sessions(lines, '.*;.*;.*;ignoreEvent', '.*;(.*);.*;.*', '.*;.*;.*;Start', '.*;.*;.*;End', '.*;(.*);(.*);.*', true, true, true) AS sessions 
+    FROM s1 EMIT CHANGES;
+    
+CREATE STREAM s3 AS SELECT 
+    sessions->session_id AS session_id, 
+    sessions->line AS session_line 
+    FROM s2 EMIT CHANGES;
+    
+SELECT session_id, session_line FROM s3 EMIT CHANGES;
+```
+
+The result is then :
+
+| session_id |         session_line          |
+|------------|:-----------------------------:|
+| sessionId1 | 2020-06-16T04;1;appli1;Start  | 
+| sessionId1 | 2020-06-16T04;1;appli1;event1 | 
+| sessionId1 | 2020-06-16T04;1;appli1;event2 | 
+| sessionId1 | 2020-06-16T04;1;appli1;event3 |
+| sessionId1 |  2020-06-16T04;1;appli1;End   |
+| sessionId2 | 2020-06-16T04;2;appli2;Start  | 
+| sessionId2 | 2020-06-16T04;2;appli3;event5 | 
+| sessionId2 | 2020-06-16T04;2;appli2;event6 | 
+| sessionId2 |  2020-06-16T04;2;appli2;End   |
+
+* **`isIgnoreIfNoStart = false`** and **`isIgnoreIfNoEnd = true`**
+
+``` 
+CREATE STREAM s4 AS SELECT 
+    igrafx_sessions(lines, '.*;.*;.*;ignoreEvent', '.*;(.*);.*;.*', '.*;.*;.*;Start', '.*;.*;.*;End', '.*;(.*);(.*);.*', true, false, true) AS sessions 
+    FROM s1 EMIT CHANGES;
+    
+CREATE STREAM s5 AS SELECT 
+    sessions->session_id AS session_id, 
+    sessions->line AS session_line 
+    FROM s4 EMIT CHANGES;
+    
+SELECT session_id, session_line FROM s5 EMIT CHANGES;
+```
+
+The result is then :
+
+| session_id |         session_line          |
+|------------|:-----------------------------:|
+| sessionId1 | 2020-06-16T04;1;appli1;Start  | 
+| sessionId1 | 2020-06-16T04;1;appli1;event1 | 
+| sessionId1 | 2020-06-16T04;1;appli1;event2 | 
+| sessionId1 | 2020-06-16T04;1;appli1;event3 |
+| sessionId1 |  2020-06-16T04;1;appli1;End   |
+| sessionId2 | 2020-06-16T04;2;appli2;Start  | 
+| sessionId2 | 2020-06-16T04;2;appli3;event5 | 
+| sessionId2 | 2020-06-16T04;2;appli2;event6 | 
+| sessionId2 |  2020-06-16T04;2;appli2;End   |
+| sessionId2 | 2020-06-16T04;2;appli2;event7 | 
+| sessionId2 |  2020-06-16T04;2;appli3;End   |
+
+* **`isIgnoreIfNoStart = true`** and **`isIgnoreIfNoEnd = false`**
+
+``` 
+CREATE STREAM s6 AS SELECT 
+    igrafx_sessions(lines, '.*;.*;.*;ignoreEvent', '.*;(.*);.*;.*', '.*;.*;.*;Start', '.*;.*;.*;End', '.*;(.*);(.*);.*', true, true, false) AS sessions 
+    FROM s1 EMIT CHANGES;
+    
+CREATE STREAM s7 AS SELECT 
+    sessions->session_id AS session_id, 
+    sessions->line AS session_line 
+    FROM s6 EMIT CHANGES;
+    
+SELECT session_id, session_line FROM s7 EMIT CHANGES;
+```
+
+The result is then :
+
+| session_id |         session_line          |
+|------------|:-----------------------------:|
+| sessionId1 | 2020-06-16T04;1;appli1;Start  | 
+| sessionId1 | 2020-06-16T04;1;appli1;event1 | 
+| sessionId1 | 2020-06-16T04;1;appli1;event2 | 
+| sessionId1 | 2020-06-16T04;1;appli1;event3 |
+| sessionId1 |  2020-06-16T04;1;appli1;End   |
+| sessionId2 | 2020-06-16T04;2;appli1;Start  | 
+| sessionId2 | 2020-06-16T04;2;appli1;event4 | 
+| sessionId3 | 2020-06-16T04;2;appli2;Start  | 
+| sessionId3 | 2020-06-16T04;2;appli3;event5 | 
+| sessionId3 | 2020-06-16T04;2;appli2;event6 | 
+| sessionId3 |  2020-06-16T04;2;appli2;End   |
+
+* **`isIgnoreIfNoStart = false`** and **`isIgnoreIfNoEnd = false`**
+
+``` 
+CREATE STREAM s8 AS SELECT 
+    igrafx_sessions(lines, '.*;.*;.*;ignoreEvent', '.*;(.*);.*;.*', '.*;.*;.*;Start', '.*;.*;.*;End', '.*;(.*);(.*);.*', true, false, false) AS sessions 
+    FROM s1 EMIT CHANGES;
+    
+CREATE STREAM s9 AS SELECT 
+    sessions->session_id AS session_id, 
+    sessions->line AS session_line 
+    FROM s8 EMIT CHANGES;
+    
+SELECT session_id, session_line FROM s9 EMIT CHANGES;
+```
+The result is then :
+
+| session_id |            session_line            |
+|------------|:----------------------------------:|
+| sessionId1 |    2020-06-16T04;1;appli1;Start    | 
+| sessionId1 |   2020-06-16T04;1;appli1;event1    | 
+| sessionId1 |   2020-06-16T04;1;appli1;event2    | 
+| sessionId1 |   2020-06-16T04;1;appli1;event3    |
+| sessionId1 |     2020-06-16T04;1;appli1;End     |
+| sessionId2 | 2020-06-16T04;1;appli2;aloneEvent1 |
+| sessionId2 | 2020-06-16T04;1;appli2;aloneEvent2 |
+| sessionId3 |    2020-06-16T04;2;appli1;Start    | 
+| sessionId3 |   2020-06-16T04;2;appli1;event4    | 
+| sessionId4 |    2020-06-16T04;2;appli2;Start    | 
+| sessionId4 |   2020-06-16T04;2;appli3;event5    | 
+| sessionId4 |   2020-06-16T04;2;appli2;event6    | 
+| sessionId4 |     2020-06-16T04;2;appli2;End     |
+| sessionId4 |   2020-06-16T04;2;appli2;event7    | 
+| sessionId4 |     2020-06-16T04;2;appli3;End     |
 
 
+In the case where **`startSessionPattern`** and **`endSessionPattern`** are both verified by the same row.
+The row is then considered as the start of a new session and end the previous session. 
+The new session is then kept independently of the **`isIgnoreIfNoEnd`** value.
 
+### Examples using the Transpositions UDFs 
+
+#### Variation 1
+
+Consider the following data as input :
+
+| Case   |   Step 1   |   Step 2   |   Step 3   |   Step 4   |     Step 5 |
+|--------|:----------:|:----------:|:----------:|:----------:|-----------:|
+| case 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 |
+| case 2 | 14/02/2020 | 15/02/2020 | 18/02/2020 |            | 18/02/2020 |
+| case 3 | 17/03/2020 |            | 24/03/2020 |            |            |
+
+We expect the following output :
+
+| Case   |  Task  | Timestamp  |
+|--------|:------:|:----------:|
+| case 1 | Step 1 | 12/01/2020 |
+| case 1 | Step 2 | 14/01/2020 |
+| case 1 | Step 3 | 15/01/2020 |
+| case 1 | Step 4 | 16/01/2020 |
+| case 1 | Step 5 | 17/01/2020 |
+| case 2 | Step 1 | 14/02/2020 |
+| case 2 | Step 2 | 15/02/2020 |
+| case 2 | Step 3 | 18/02/2020 |
+| case 2 | Step 5 | 18/02/2020 |
+| case 3 | Step 1 | 17/03/2020 |
+| case 3 | Step 3 | 24/03/2020 |
+
+
+Nevertheless, the UDF doesn’t allow us to directly transition from the first table to the second one, so we need to use intermediate ksqlDB streams.
+
+The UDF takes as input a **Java List** of type **`STRUCT<TASK VARCHAR(STRING), TIME VARCHAR(STRING)>`**, 
+where the list represents a single row and each element in the list corresponds to one column in that row. 
+For example, the first element of the list (which corresponds to the first row of the example) might be: **`STRUCT<Step 1, 12/01/2020>`**.
+
+Here, the output type is identical to the input type because it is of type **Tabular**. This instructs ksqlDB to create a row for each element in the output list. The first variation simply removes elements with an empty or null **TIME** field from the input list.
+
+To test this variation directly in ksqlDB, launch ksqlDB. Then, use the following commands:
+
+- Create the initial stream representing rows with columns, where each row follows the format: `Case | Step 1 | Step 2 | Step 3 | Step 4 | Step 5`
+
+```
+CREATE STREAM s1 (
+	case VARCHAR,
+	step1 VARCHAR,
+	step2 VARCHAR,
+	step3 VARCHAR,
+	step4 VARCHAR,
+	step5 VARCHAR
+) WITH (
+        kafka_topic = 's1',
+	partitions = 1,
+	value_format = 'avro'
+);
+```
+
+- Next, create the stream that prepares the call to the UDF. Here, an **`ARRAY<STRUCT(...), STRUCT(...), ...>`** corresponds to the UDF **input** parameter, 
+with **ARRAY** being the ksqlDB type that maps to **Java's `List`**.
+
+```
+CREATE STREAM s2 AS SELECT 
+    case, 
+    ARRAY[STRUCT(task := 'Step 1', time := step1), 
+          STRUCT(task := 'Step 2', time := step2), 
+          STRUCT(task := 'Step 3', time := step3), 
+          STRUCT(task := 'Step 4', time := step4), 
+          STRUCT(task := 'Step 5', time := step5)] AS steps
+    FROM s1 EMIT CHANGES;
+```
+
+- Now create the STREAM that is going to call **the igrafx_transposition UDF**
+
+```
+CREATE STREAM s3 AS SELECT 
+    case, 
+    igrafx_transposition(steps) AS steps 
+    FROM s2 EMIT CHANGES;
+```
+
+With the previous example, the `s3` STREAM contains the following data :
+
+| case   |           steps            |
+|--------|:--------------------------:|
+| case 1 | STRUCT<Step 1, 12/01/2020> | 
+| case 1 | STRUCT<Step 2, 14/01/2020> | 
+| case 1 | STRUCT<Step 3, 15/01/2020> | 
+| case 1 | STRUCT<Step 4, 16/01/2020> | 
+| case 1 | STRUCT<Step 5, 17/01/2020> | 
+| case 2 | STRUCT<Step 1, 14/02/2020> | 
+| case 2 | STRUCT<Step 2, 15/02/2020> | 
+| case 2 | STRUCT<Step 3, 18/02/2020> | 
+| case 2 | STRUCT<Step 5, 18/02/2020> | 
+| case 3 | STRUCT<Step 1, 17/03/2020> | 
+| case 3 | STRUCT<Step 3, 24/03/2020> | 
+
+Furthermore, we create the final STREAM which deconstructs the `STRUCT` from **`s3`** into two different columns:
+
+``` 
+CREATE STREAM s4 AS SELECT 
+    case, 
+    steps->task AS activity, 
+    steps->time AS timestamp 
+    FROM s3 EMIT CHANGES;
+```
+
+Once all the STREAMS have been created, it is possible to add the data, and here each `INSERT` represents a row:
+
+```
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 1', '12/01/2020', '14/01/2020', '15/01/2020', '16/01/2020', '17/01/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 2', '14/02/2020', '15/02/2020', '18/02/2020', '', '18/02/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 3', '17/03/2020', '', '24/03/2020', '', '');
+
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 4', '17/03/2020', '25/03/2020', '', '16/03/2020', '24/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 5', '', '', '', '16/03/2020', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 6', '', '', '', '', '');
+
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 7', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('cas e8', '17/03/2020', '16/03/2020', '17/03/2020', '18/03/2020', '17/03/2020');
+```
+
+Finally, we can display the final result in ksqlDB with :
+
+```
+SELECT case, activity, timestamp FROM s4 EMIT CHANGES;
+```
+#### Variation 2
+Let us consider this case as input :
+
+|  Case  |   Step 1   |   Step 2   |   Step 3   |   Step 4   | Step 5     |
+|--------|:----------:|:----------:|:----------:|:----------:|-----------:|
+| case 1 | 17/03/2020 | 16/03/2020 | 17/03/2020 | 18/03/2020 | 17/03/2020 |
+
+We get this output if **`isStartInformation = true`** and **`isTaskNameAscending = true`** :
+
+| Case   | Activity |   Start    |    End     |
+|--------|:--------:|:----------:|:----------:|
+| case 1 |  Step 2  | 16/03/2020 | 17/03/2020 |
+| case 1 |  Step 1  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 3  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 5  | 17/03/2020 | 18/03/2020 |
+| case 1 |  Step 4  | 18/03/2020 | 18/03/2020 |
+
+Otherwise, we get this output if **`isStartInformation = true`** and **`isTaskNameAscending = false`** :
+
+| Case   | Activity |   Start    |    End     |
+|--------|:--------:|:----------:|:----------:|
+| case 1 |  Step 2  | 16/03/2020 | 17/03/2020 |
+| case 1 |  Step 5  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 3  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 1  | 17/03/2020 | 18/03/2020 |
+| case 1 |  Step 4  | 18/03/2020 | 18/03/2020 |
+
+We get the following output if **`isStartInformation = false`** and **`isTaskNameAscending = true`** :
+
+| Case   | Activity |   Start    |    End     |
+|--------|:--------:|:----------:|:----------:|
+| case 1 |  Step 2  | 16/03/2020 | 16/03/2020 |
+| case 1 |  Step 1  | 16/03/2020 | 17/03/2020 |
+| case 1 |  Step 3  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 5  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 4  | 17/03/2020 | 18/03/2020 |
+
+We get the following output if **`isStartInformation = false`** and **`isTaskNameAscending = false`** :
+
+| Case   | Activity |   Start    |    End     |
+|--------|:--------:|:----------:|:----------:|
+| case 1 |  Step 2  | 16/03/2020 | 16/03/2020 |
+| case 1 |  Step 5  | 16/03/2020 | 17/03/2020 |
+| case 1 |  Step 3  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 1  | 17/03/2020 | 17/03/2020 |
+| case 1 |  Step 4  | 17/03/2020 | 18/03/2020 |
+
+To test this variation directly in ksqlDB, we first need to launch ksqlDB, then, write the following commands :
+
+The first two STREAMS are the same as the ones in the first variation.
+
+- Create the initial stream representing rows with columns, where each row follows the format: `Case | Step 1 | Step 2 | Step 3 | Step 4 | Step 5`
+
+```
+CREATE STREAM s1 (
+	case VARCHAR,
+	step1 VARCHAR,
+	step2 VARCHAR,
+	step3 VARCHAR,
+	step4 VARCHAR,
+	step5 VARCHAR
+) WITH (
+        kafka_topic = 's1',
+	partitions = 1,
+	value_format = 'avro'
+);
+```
+
+- Next, create the stream that prepares the call to the UDF. Here, an **`ARRAY<STRUCT(...), STRUCT(...), ...>`** corresponds to the UDF **input** parameter,
+  with **ARRAY** being the ksqlDB type that maps to **Java's `List`**.
+```
+CREATE STREAM s2 AS SELECT 
+    case, 
+    ARRAY[STRUCT(task := 'Step 1', time := step1), 
+          STRUCT(task := 'Step 2', time := step2), 
+          STRUCT(task := 'Step 3', time := step3), 
+          STRUCT(task := 'Step 4', time := step4), 
+          STRUCT(task := 'Step 5', time := step5)] AS steps
+    FROM s1 EMIT CHANGES;
+```
+
+- Now we create the STREAM that is going to call **the iGrafx transposition UDF function**.
+
+```
+CREATE STREAM s3 AS SELECT 
+    case, 
+    igrafx_transposition(steps, "dd/MM/yyyy", true, true) AS steps 
+    FROM s2 EMIT CHANGES;
+```
+or
+```
+CREATE STREAM s3 AS SELECT 
+    case, 
+    igrafx_transposition(steps, "dd/MM/yyyy", true, false) AS steps 
+    FROM s2 EMIT CHANGES;
+```
+or
+```
+CREATE STREAM s3 AS SELECT 
+    case, 
+    igrafx_transposition(steps, "dd/MM/yyyy", false, true) AS steps 
+    FROM s2 EMIT CHANGES;
+```
+or
+```
+CREATE STREAM s3 AS SELECT 
+    case, 
+    igrafx_transposition(steps, "dd/MM/yyyy", false, false) AS steps 
+    FROM s2 EMIT CHANGES;
+```
+
+- Now we create the final STREAM which deconstructs the `STRUCT` from **`s3`** into 4 different columns:
+
+``` 
+CREATE STREAM s4 AS SELECT 
+    case, 
+    steps->task AS activity, 
+    steps->start AS start_date,
+    steps->stop AS end_date 
+    FROM s3 EMIT CHANGES;
+```
+
+Once all the STREAMS have been created, we can add the data. 
+Here each `INSERT` represents to a row.
+
+```
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 1', '12/01/2020', '14/01/2020', '15/01/2020', '16/01/2020', '17/01/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 2', '14/02/2020', '15/02/2020', '18/02/2020', '', '18/02/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 3', '17/03/2020', '', '24/03/2020', '', '');
+
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 4', '17/03/2020', '25/03/2020', '', '16/03/2020', '24/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 5', '', '', '', '16/03/2020', '');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 6', '', '', '', '', '');
+
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 7', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020', '17/03/2020');
+INSERT INTO s1 (case, step1, step2, step3, step4, step5) VALUES ('case 8', '17/03/2020', '16/03/2020', '17/03/2020', '18/03/2020', '17/03/2020');
+```
+
+Finally, we can display the final result with :
+
+```
+SELECT cas, activite, debut, fin FROM s4 EMIT CHANGES;
+```
+#### 3rd UDF example
+Let us consider that the initial row corresponds to :
+
+| Case   |   Step 1   |   Step 2   |   Step 3   |   Step 4   |   Step 5   | Total Price |
+|--------|:----------:|:----------:|:----------:|:----------:|:----------:|-------------|
+| case 1 | 12/01/2020 | 14/01/2020 | 15/01/2020 | 16/01/2020 | 17/01/2020 | 240         |
+
+An information is given about the **Total Price** related to the process. 
+In case of use of the UDF (for instance with the first variation), 
+if the created STREAMS keep the information of the **Total Price** column, 
+then the **Total Price** is present for each of the created rows:
+
+```
+CREATE STREAM s1 (
+	case VARCHAR,
+	step1 VARCHAR,
+	step2 VARCHAR,
+	step3 VARCHAR,
+	step4 VARCHAR,
+	step5 VARCHAR,
+	price INTEGER
+) WITH (
+        kafka_topic = 's1',
+	partitions = 1,
+	value_format = 'avro'
+);
+```
+
+```
+CREATE STREAM s2 AS SELECT 
+    case, 
+    ARRAY[STRUCT(task := 'Step 1', time := step1), 
+          STRUCT(task := 'Step 2', time := step2), 
+          STRUCT(task := 'Step 3', time := step3), 
+          STRUCT(task := 'Step 4', time := step4), 
+          STRUCT(task := 'Step 5', time := step5)] AS steps,
+    price
+    FROM s1 EMIT CHANGES;
+```
+
+```
+CREATE STREAM s3 AS SELECT 
+    case, 
+    igrafx_transposition(steps) AS steps,
+    price
+    FROM s2 EMIT CHANGES;
+```
+
+``` 
+CREATE STREAM s4 AS SELECT 
+    case, 
+    steps->task AS activity, 
+    steps->time AS timestamp,
+    price
+    FROM s3 EMIT CHANGES;
+```
+
+The result for the current example is:
+
+| Case   | Activity | Timestamp  | Price |
+|--------|:--------:|:----------:|:-----:|
+| case 1 |  Step 1  | 12/01/2020 |  240  |
+| case 1 |  Step 2  | 14/01/2020 |  240  |
+| case 1 |  Step 3  | 15/01/2020 |  240  |
+| case 1 |  Step 4  | 16/01/2020 |  240  |
+| case 1 |  Step 5  | 17/01/2020 |  240  |
+
+This can be problematic if, for instance, we then want to sum all the values in the **Price** column to determine the total price
+, because the result wouldn't take the real value for the total price of each process.
+
+Here, the calculated value would be **5x240**, whereas the real total price of the process is 240.
+
+
+## Further documentation
+
+In this section, documentation can be found for further reading.
+
+Support is available at the following address: [support@igrafx.com](mailto:support@igrafx.com)
+
+
+* [iGrafx Help](https://fr.help.logpickr.com/)
+* [iGrafx P360 Live Mining API](https://public-api.logpickr.com/#/)
