@@ -7,3 +7,40 @@ hs_err_pid*
 # IDEA
 .idea
 
+# Connectors
+# General ignores
+igrafx-connectors/*.class
+igrafx-connectors/*.log
+
+# sbt specific
+igrafx-connectors/.cache/
+igrafx-connectors/.history/
+igrafx-connectors/.lib/
+igrafx-connectors/dist/*
+igrafx-connectors/target/
+igrafx-connectors/artifacts/
+igrafx-connectors/lib_managed/
+igrafx-connectors/src_managed/
+igrafx-connectors/project/boot/
+igrafx-connectors/project/plugins/project/
+igrafx-connectors/.scala_dependencies
+igrafx-connectors/.worksheet
+/igrafx-connectors/project/target/
+/igrafx-connectors/project/project/target/
+/igrafx-connectors/aggregationMain/target/
+/igrafx-connectors/core/target/
+
+# Liveconnect
+/igrafx-liveconnect/docker-compose/data/
+/igrafx-liveconnect/docker-compose/extensions/
+/igrafx-liveconnect/docker-compose/aggregation-sink-igrafx/
+/igrafx-liveconnect/sources/error/
+/igrafx-liveconnect/sources/input/
+/igrafx-liveconnect/sources/processed/jira_0_stream.csv/
+/igrafx-liveconnect/sources/processed/snow_0_stream.csv/
+
+# UDFs
+/igrafx-udfs/null/
+/igrafx-udfs/project/project/target/
+/igrafx-udfs/project/target/
+/igrafx-udfs/target/
