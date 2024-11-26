@@ -29,7 +29,7 @@ jobs:
 #        image: docker:19.03.12
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -39,7 +39,7 @@ jobs:
           cache: 'sbt'
 
       - name: Cache Ivy2
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.ivy2
           key: ${{ runner.os }}-ivy2-${{ github.job }}
@@ -95,12 +95,12 @@ jobs:
         working-directory: ./igrafx-connectors
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
           cache: 'sbt'
 
