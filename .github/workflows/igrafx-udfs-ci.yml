@@ -29,17 +29,17 @@ jobs:
 #        image: docker:19.03.12
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
           cache: 'sbt'
 
       - name: Cache Ivy2
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.ivy2
           key: ${{ runner.os }}-ivy2-${{ github.job }}
@@ -59,11 +59,18 @@ jobs:
           sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverage test coverageReport
           sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverageAggregate
 
-      - name: Upload Coverage Report
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./igrafx-udfs/target/scala-${{ matrix.scala-version }}/scoverage-report/scoverage.xml
+      - name: Locate Coverage Report
+        run: find ./igrafx-udfs -iname 'scoverage.xml'
 
+      - name: Upload Coverage Report as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: "**/scoverage-report/scoverage.xml"
+          retention-days: 90
+
+      - name: Output Test Results Artifact ID
+        run: echo 'Artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}'
 
     env:
       CI_PIPELINE_SOURCE: ${{ github.event_name }}
@@ -78,7 +85,7 @@ jobs:
         working-directory: ./igrafx-udfs
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -109,9 +116,14 @@ jobs:
           find . -iname 'igrafx-udfs-assembly-*.jar' -exec cp '{}' artifacts/ \;
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: iGrafx-UDFs-artifact
-          path: igrafx-udfs/artifacts/
+          name: igrafx-udfs-artifact
+#          path: igrafx-udfs/artifacts/
+          path: igrafx-udfs/target/scala-2.13/
+          retention-days: 90
+
+      - name: Output Test Results Artifact ID
+        run: echo 'Artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}'
 
 
