@@ -1,28 +1,28 @@
-name: iGrafx UDFs CI
+name: iGrafx Connectors CI
 
 on:
-    push:
-        branches:
-            - master
-            - dev
-            - release/*
-        tags:
-          - '*'
-        paths:
-          - '/igrafx-udfs/**'
-    pull_request:
-        branches:
-            - master
-            - dev
-            - release/*
-        paths:
-          - '/igrafx-udfs/**'
-    schedule:
-      - cron: '0 0 * * 0' # Run every Sunday at midnight UTC
+  push:
+    branches:
+      - master
+      - dev
+      - release/*
+    tags:
+      - '*'
+    paths:
+      - '/igrafx-connectors/**'
+  pull_request:
+    branches:
+      - master
+      - dev
+      - release/*
+    paths:
+      - '/igrafx-connectors/**'
+  schedule:
+    - cron: '0 0 * * 0' # Run every Sunday at midnight UTC
 
 jobs:
   test:
-    name: Test iGrafx-UDFs
+    name: Test iGrafx Connectors
     runs-on: ubuntu-latest
 #    services:
 #      docker:
@@ -54,28 +54,45 @@ jobs:
           sudo apt-get install sbt -y
 
       - name: Run Tests
-        working-directory: ./igrafx-udfs
+        working-directory: ./igrafx-connectors
         run: |
           sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverage test coverageReport
           sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverageAggregate
 
-      - name: Upload Coverage Report
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./igrafx-udfs/target/scala-${{ matrix.scala-version }}/scoverage-report/scoverage.xml
+      # Locate coverage report
+      - name: Locate Coverage Report
+        run: find . -iname 'cobertura.xml'
 
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-coverage
+          path: "**/coverage-report/cobertura.xml"
+          retention-days: 90
+
+      - name: Output Coverage Artifact ID
+        run: echo 'Artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}'
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: "**/target/test-reports/TEST-*.xml"
+          retention-days: 90
+
+      - name: Output Test Results Artifact ID
+        run: echo 'Artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}'
 
     env:
       CI_PIPELINE_SOURCE: ${{ github.event_name }}
 
-
   build:
-    name: Build iGrafx-UDFs
+    name: Build iGrafx Connectors
     runs-on: ubuntu-latest
     needs: test
     defaults:
       run:
-        working-directory: ./igrafx-udfs
+        working-directory: ./igrafx-connectors
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -91,7 +108,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.ivy2/cache
-          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt', '**/*.scala') }}
+          key: ${{ runner.os }}-ivy2-${{ github.job }}
           restore-keys: |
             ${{ runner.os }}-ivy2
 
@@ -102,16 +119,18 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install sbt -y
 
-      - name: Build artifact
+      - name: Build Project
         run: |
           sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ clean assembly
           mkdir -p artifacts
-          find . -iname 'igrafx-udfs-assembly-*.jar' -exec cp '{}' artifacts/ \;
+          find . -iname '*.jar' -exec cp '{}' artifacts/ \;
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: iGrafx-UDFs-artifact
-          path: igrafx-udfs/artifacts/
+          name: igrafx-connectors-artifacts
+          path: igrafx-connectors/artifacts/
+          retention-days: 90
 
-
+      - name: Output Build Artifact ID
+        run:  echo 'Artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}'
