@@ -1,5 +1,6 @@
 # Environment variables
 
+
 ## Aggregation Main Sink
 
 | Name                                  |       Default value        |                                                                                                                         Comment |
