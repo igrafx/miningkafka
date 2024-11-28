@@ -18,6 +18,7 @@ Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.co
 - [Quickstart](#quickstart)
   - [iGrafx Liveconnect: Quickstart](#igrafx-liveconnect-quickstart)
   - [ksqlDB CLI and Kafka UI: Quickstart](#ksqldb-cli-and-kafka-ui-quickstart)
+  - [Getting the JAR builds from the CI/CD pipelines](#getting-the-jar-builds-from-the-cicd-pipelines)
   - [iGrafx Connectors: Quickstart](#igrafx-connectors-quickstart)
   - [iGrafx UDFs: Quickstart](#igrafx-udfs-quickstart)
 
@@ -151,6 +152,40 @@ You can then access it at http://localhost:9021/.
 The credentials for Kafka UI are set in the ``docker-compose.yml`` file, within the ``JAVA_OPTS`` variable.
 ``-Dspring.security.user.name`` is the username and ``-Dspring.security.user.password`` is the password.
 
+### Getting the JAR builds from the CI/CD pipelines
+
+To utilize the iGrafx Connectors and UDFs, you need the corresponding JAR files. There are two ways to obtain these files:
+
+1. **Build the JAR Files Yourself**: Follow the instructions provided in the subsequent sections to build the JAR files manually.
+2. **Retrieve JAR Files from the CI/CD Pipelines**: You can directly download the JAR files from the CI/CD pipelines in the iGrafx GitHub Project.
+
+To retrieve the JAR files from the CI/CD pipelines, follow these steps:
+
+1. Navigate to the **[Actions tab](https://github.com/igrafx/miningkafka/actions)** in the GitHub repository.
+2. In the left sidebar, select the workflow of interest: **iGrafx Connectors** or **UDFs**, as shown below:
+
+   ![iGrafx Connectors or UDFs](./imgs/igrafx-connectors-or-udfs.png)
+
+3. Click on the workflow name to access the workflow runs. For this example, we will focus on the **iGrafx Connectors** workflow.
+  - Click on **iGrafx Connectors CI**. This will take you to the workflow runs page:
+
+    ![iGrafx Connectors CI](./imgs/igrafx-connectors-ci.png)
+
+4. Select the most recent successful run (indicated by a **green checkmark**). You will arrive at a page similar to this:
+
+   ![iGrafx Connectors CI](./imgs/igrafx-connectors-ci-2.png)
+
+5. Locate and click on **igrafx-connectors-artifacts** (or **igrafx-udfs-artifacts** for the UDFs workflow) to download a ZIP file containing the JAR files.
+
+6. Once downloaded, extract the desired JAR files:
+  - Place the **Connectors JAR files** in the `igrafx-liveconnect/docker-compose/connect-plugins/` directory of the **iGrafx Liveconnect** module. This allows them to be used in the **ksqlDB CLI**.
+
+    ![iGrafx Connectors CI](./imgs/igrafx-connectors-ci-3.png)
+
+  - For **UDFs JAR files**, place them in the `igrafx-liveconnect/docker-compose/extensions/` directory of the **iGrafx Liveconnect** module. If this directory does not exist, create it.
+
+By following these steps, you can easily retrieve and configure the required JAR files for iGrafx Connectors and UDFs.
+
 ### iGrafx Connectors: Quickstart
 If you want to use the iGrafx Connectors to send data from Kafka to the Process360 Live, 
 you must  go to the ``igrafx-connectors`` directory as follows:
@@ -188,7 +223,7 @@ If you want to use the iGrafx UDFs, you must first go to the ``igrafx-udfs`` dir
 ```bash
 cd igrafx-udfs/
 ```
-Then, you can build the desired JAR file containing all the UDFsusing the following command:
+Then, you can build the desired JAR file containing all the UDFs using the following command:
 
 ```bash
 sbt assembly
