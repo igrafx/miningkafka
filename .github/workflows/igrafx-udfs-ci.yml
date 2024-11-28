@@ -1,0 +1,129 @@
+name: iGrafx UDFs CI
+
+on:
+    push:
+        branches:
+            - master
+            - dev
+            - release/*
+        tags:
+          - '*'
+        paths:
+          - '/igrafx-udfs/**'
+    pull_request:
+        branches:
+            - master
+            - dev
+            - release/*
+        paths:
+          - '/igrafx-udfs/**'
+    schedule:
+      - cron: '0 0 * * 0' # Run every Sunday at midnight UTC
+
+jobs:
+  test:
+    name: Test iGrafx-UDFs
+    runs-on: ubuntu-latest
+#    services:
+#      docker:
+#        image: docker:19.03.12
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: 'sbt'
+
+      - name: Cache Ivy2
+        uses: actions/cache@v4
+        with:
+          path: ~/.ivy2
+          key: ${{ runner.os }}-ivy2-${{ github.job }}
+          restore-keys: |
+            ${{ runner.os }}-ivy2
+
+      - name: Install sbt
+        run: |
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
+          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x99E82A75642AC823" | sudo apt-key add
+          sudo apt-get update -y
+          sudo apt-get install sbt -y
+
+      - name: Run Tests
+        working-directory: ./igrafx-udfs
+        run: |
+          sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverage test coverageReport
+          sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ coverageAggregate
+
+      - name: Locate Coverage Report
+        run: find ./igrafx-udfs -iname 'scoverage.xml'
+
+      - name: Upload Coverage Report as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: "**/scoverage-report/scoverage.xml"
+          retention-days: 90
+
+      - name: Output Test Results Artifact ID
+        run: echo 'Artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}'
+
+    env:
+      CI_PIPELINE_SOURCE: ${{ github.event_name }}
+
+
+  build:
+    name: Build iGrafx-UDFs
+    runs-on: ubuntu-latest
+    needs: test
+    defaults:
+      run:
+        working-directory: ./igrafx-udfs
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'sbt'
+
+      - name: Cache Ivy2
+        uses: actions/cache@v3
+        with:
+          path: ~/.ivy2/cache
+          key: ${{ runner.os }}-ivy2-${{ hashFiles('**/*.sbt', '**/*.scala') }}
+          restore-keys: |
+            ${{ runner.os }}-ivy2
+
+      - name: Install sbt
+        run: |
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
+          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x99E82A75642AC823" | sudo apt-key add
+          sudo apt-get update -y
+          sudo apt-get install sbt -y
+
+      - name: Build artifact
+        run: |
+          sbt -J-Dsbt.ivy.home=.ivy2/ -J-Divy.home=.ivy2/ clean assembly
+          mkdir -p artifacts
+          find . -iname 'igrafx-udfs-assembly-*.jar' -exec cp '{}' artifacts/ \;
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: igrafx-udfs-artifact
+#          path: igrafx-udfs/artifacts/
+          path: igrafx-udfs/target/scala-2.13/
+          retention-days: 90
+
+      - name: Output Test Results Artifact ID
+        run: echo 'Artifact ID is ${{ steps.artifact-upload-step.outputs.artifact-id }}'
+
+
