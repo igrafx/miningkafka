@@ -1243,6 +1243,7 @@ Once in the ksqlDB CLI, the different UDFs at your disposal can be listed with t
 SHOW FUNCTIONS;
 ```
 
+
 ## Examples
 
 This section provides practical examples for configuring and using iGrafx Kafka Modules in various scenarios. 
