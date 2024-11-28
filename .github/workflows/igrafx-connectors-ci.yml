@@ -8,15 +8,11 @@ on:
       - release/*
     tags:
       - '*'
-#    paths:
-#      - '/igrafx-connectors/**'
   pull_request:
     branches:
       - master
       - dev
       - release/*
-#    paths:
-#      - '/igrafx-connectors/**'
   schedule:
     - cron: '0 0 * * 0' # Run every Sunday at midnight UTC
 
@@ -24,9 +20,6 @@ jobs:
   test:
     name: Test iGrafx Connectors
     runs-on: ubuntu-latest
-#    services:
-#      docker:
-#        image: docker:19.03.12
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
