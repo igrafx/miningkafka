@@ -8,15 +8,15 @@ on:
       - release/*
     tags:
       - '*'
-    paths:
-      - '/igrafx-connectors/**'
+#    paths:
+#      - '/igrafx-connectors/**'
   pull_request:
     branches:
       - master
       - dev
       - release/*
-    paths:
-      - '/igrafx-connectors/**'
+#    paths:
+#      - '/igrafx-connectors/**'
   schedule:
     - cron: '0 0 * * 0' # Run every Sunday at midnight UTC
 

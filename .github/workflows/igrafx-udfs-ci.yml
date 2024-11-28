@@ -8,15 +8,15 @@ on:
             - release/*
         tags:
           - '*'
-        paths:
-          - '/igrafx-udfs/**'
+#        paths:
+#          - '/igrafx-udfs/**'
     pull_request:
         branches:
             - master
             - dev
             - release/*
-        paths:
-          - '/igrafx-udfs/**'
+#        paths:
+#          - '/igrafx-udfs/**'
     schedule:
       - cron: '0 0 * * 0' # Run every Sunday at midnight UTC
 
