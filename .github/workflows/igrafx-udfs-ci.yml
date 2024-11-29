@@ -8,15 +8,11 @@ on:
             - release/*
         tags:
           - '*'
-        paths:
-          - '/igrafx-udfs/**'
     pull_request:
         branches:
             - master
             - dev
             - release/*
-        paths:
-          - '/igrafx-udfs/**'
     schedule:
       - cron: '0 0 * * 0' # Run every Sunday at midnight UTC
 
@@ -24,9 +20,6 @@ jobs:
   test:
     name: Test iGrafx-UDFs
     runs-on: ubuntu-latest
-#    services:
-#      docker:
-#        image: docker:19.03.12
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -119,7 +112,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: igrafx-udfs-artifact
-#          path: igrafx-udfs/artifacts/
           path: igrafx-udfs/target/scala-2.13/
           retention-days: 90
 
