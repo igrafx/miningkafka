@@ -2959,6 +2959,6 @@ In this section, documentation can be found for further reading.
 Support is available at the following address: [support@igrafx.com](mailto:support@igrafx.com)
 
 
-* [iGrafx Help](https://fr.help.logpickr.com/)
-* [iGrafx P360 Live Mining API](https://doc.igrafxcloud.com/mining/en/index.html)
+* [iGrafx Help](https://doc.igrafxcloud.com/mining/en/index.html)
+* [iGrafx P360 Live Mining API](https://doc.igrafxcloud.com/mining/api/index.html)
 * [The KSQLDB Language](https://docs.confluent.io/platform/current/ksqldb/reference/overview.html)
