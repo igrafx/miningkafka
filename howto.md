@@ -27,7 +27,6 @@ Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.co
   - [Launching Liveconnect](#launching-liveconnect)
   - [Installing New Connectors](#installing-new-connectors)
   - [Recommended Connectors](#recommended-connectors)
-  - [Configuration for a Specific Kafka Topic](#configuration-for-a-specific-kafka-topic)
   - [Example Configuration for Cross-VM Communication](#example-configuration-for-cross-vm-communication)
   - [Data-Transform Database](#data-transform-database)
   - [SFTP Server Configuration](#sftp-server-configuration)
@@ -76,14 +75,16 @@ Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.co
   - [Basic iGrafx Connector Example](#basic-igrafx-connector-example)
   - [Full Data Pipeline Example](#full-data-pipeline-example)
     - [Data Pipeline Overview](#data-pipeline-overview)
-    - [Source Files](#source-files)
-    - [Connectors and UDF Installation](#connectors-and-udf-installation)
-    - [Connector for Process Mining Platform](#connector-for-process-mining-platform)
-    - [Connector for CSV Files](#connector-for-csv-files)
-    - [Custom UDFs](#custom-udfs)
-  - [1. Source Connectors](#1-source-connectors)
-  - [2. Streams and Data Transformation](#2-streams-and-data-transformation)
-  - [3. Sending Data to the iGrafx Mining Platform](#3-sending-data-to-the-igrafx-mining-platform)
+    - [Preparation for the pipeline](#preparation-for-the-pieline)
+      - [Source Files](#source-files)
+      - [Connectors and UDF Installation](#connectors-and-udf-installation)
+      - [Connector for Process Mining Platform](#connector-for-process-mining-platform)
+      - [Connector for CSV Files](#connector-for-csv-files)
+      - [Custom UDFs](#custom-udfs)
+    - [Steps for the pipeline:](#steps-for-the-pipeline)
+      - [1. Source Connectors](#1-source-connectors)
+      - [2. Streams and Data Transformation](#2-streams-and-data-transformation)
+      - [3. Sending Data to the iGrafx Mining Platform](#3-sending-data-to-the-igrafx-mining-platform)
   - [Aggregation Connector Examples](#aggregation-connector-examples)
     - [Example 1](#example-1)
     - [Example 2](#example-2)
@@ -312,20 +313,6 @@ Below are the installation commands for the recommended connectors:
   2. **Retrieve the Connector Jar from the pipeline**.
 
 > Note that you may also download the iGrafx UDFs by following [similar commands](#igrafx-udfs).
-
-
-### Configuration for a Specific Kafka Topic
-
-The `igrafx-liveconnect` template can be deployed on a separate VM from the main application.
-
-However, to ensure proper communication, the Kafka registry and broker associated with the topic must be accessible to the `api` container of the target application. This requires opening the registry and Kafka broker ports on the VM host where they are installed and confirming that the host is reachable from the `api` service.
-
-To set up a workgroup with LiveConnect:
-
-- **Set the Workgroup ID:** Define the workgroup ID in the `.env` file under `WORKGROUP_ID`.
-- **Configure Kafka Connection in Database:** In the `WORKGROUPS` table in PostgreSQL, update the `KAFKA_BROKER` and `KAFKA_REGISTRY` columns with the appropriate URLs. For example:
-  - `KAFKA_BROKER`: `http://kafka-broker:29092`
-  - `KAFKA_REGISTRY`: `http://schema-registry:8081`
 
 ### Example Configuration for Cross-VM Communication
 
@@ -1565,6 +1552,7 @@ The illustrated use case comes from the IT ticketing domain, where ServiceNow ma
 #### Data Pipeline Overview
 ![data_pipeline](imgs/datapipeline_schema.png)
 
+### Preparation for the pieline
 #### Source Files
 
 The 2 source files can be found under the path ``/examples``.
@@ -1591,7 +1579,7 @@ After downloading, extract the contents of the archive and place them in the `do
 #### Custom UDFs
 You can install the custom UDFs by following the steps described in the [iGrafx UDFs](#igrafx-udfs) section of this document.
 
-
+### Steps for the pipeline:
 ### 1. Source Connectors
 Launch Liveconnect with the connectors JARs and the Jira/Snow files placed in the appropriate folders. Once it is running, enter the following requests using ksql (either via the ksql CLI or a graphical UI).
 
@@ -2972,4 +2960,5 @@ Support is available at the following address: [support@igrafx.com](mailto:suppo
 
 
 * [iGrafx Help](https://fr.help.logpickr.com/)
-* [iGrafx P360 Live Mining API](https://public-api.logpickr.com/#/)
+* [iGrafx P360 Live Mining API](https://doc.igrafxcloud.com/mining/en/index.html)
+* [The KSQLDB Language](https://docs.confluent.io/platform/current/ksqldb/reference/overview.html)
