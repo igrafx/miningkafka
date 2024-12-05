@@ -87,10 +87,10 @@ services:
       # SFTP directories access
       - ./data/sftp/foo/upload:/sftp/foo/upload:rw  #  example data from sftp account foo
       - ./data/sftp/foo/processed:/sftp/foo/processed:rw  #  example data from sftp account foo, processed
-      - ../sources/input/jira:/data/jira:rw  
-      - ../sources/input/snow:/data/snow:rw
-      - ../sources/error:/data/error:rw
-      - ../sources/processed:/data/processed:rw
+      - ../examples/sources/input/jira:/data/jira:rw
+      - ../examples/sources/input/snow:/data/snow:rw
+      - ../examples/sources/error:/data/error:rw
+      - ../examples/sources/processed:/data/processed:rw
     environment:
       CONNECT_BOOTSTRAP_SERVERS: ${BROKERS}
       CONNECT_REST_ADVERTISED_HOST_NAME: connect

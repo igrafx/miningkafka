@@ -1,5 +1,5 @@
-liveconnect:
+start:
 	docker-compose up -d 
 
-liveconnect-down:
+stop:
 	docker-compose down
