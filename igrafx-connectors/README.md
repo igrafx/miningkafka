@@ -486,7 +486,7 @@ Here, *`connect`* refers to the Kafka Connect service name specified in the `doc
 com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkTask=DEBUG,com.igrafx.kafka.sink.aggregation.adapters.AggregationSinkConnector=DEBUG
 ```
 
-## Compilation and Deployment on LiveConnect
+## Compilation and Deployment with docker compose
 
 To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the module (Aggregation or AggregationMain) and run:
 ```
@@ -495,9 +495,9 @@ sbt assembly
 
 After compilation, locate the **aggregation-connector_{version}.jar** file (or **aggregation-main-connector_{version}.jar** for AggregationMain) in the **artifacts** directory.
 
-Copy this file and paste it into the **docker-compose/connect-plugins/** directory in LiveConnect (create this directory if it doesn’t already exist).
+Copy this file and paste it into the **docker-compose/connect-plugins/** directory in Docker Compose (create this directory if it doesn’t already exist).
 
-Once LiveConnect is launched, the connector will be available for use.
+Once the infrastructure is launched, the connector will be available for use.
 
 
 ## Creating and Adding a New Connector

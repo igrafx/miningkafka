@@ -229,7 +229,7 @@ The UDF requires the following parameters:
 
 You may check out the [example](https://github.com/igrafx/miningkafka/blob/master/howto.md#variation-2-1) to see how the UDF works.
 
-## Compilation and Deployment on LiveConnect
+## Compilation and Deployment with docker compose
 
 To compile the connector and generate the **.jar** file needed for Kafka Connect, navigate to the root of the module and run:
 ```
@@ -237,7 +237,7 @@ sbt assembly
 ``` 
 The **jar** contains all the UDFs of the project.
 
-Place the newly created `.jar` file (located in the `target/scala-2.13` directory) into the `docker-compose/extensions/` directory of the iGrafx Liveconnect module. If this directory does not exist, create it. Ensure the following lines are included in the `ksqldb-server` configuration in `docker-compose.yml`:
+Place the newly created `.jar` file (located in the `target/scala-2.13` directory) into the `docker-compose/extensions/` directory of the Docker Compose module. If this directory does not exist, create it. Ensure the following lines are included in the `ksqldb-server` configuration in `docker-compose.yml`:
 
 ``` 
 ksqldb-server:
@@ -249,12 +249,12 @@ ksqldb-server:
       KSQL_KSQL_EXTENSION_DIR: "/opt/ksqldb-udfs"
 ```
 
-Once LiveConnect is launched, the connector will be available for use.
+Once Docker Compose is launched, the connector will be available for use.
 
-We can connect to the ksqlDB CLI, from the ``docker-compose/`` repository of Liveconnect, with the command :
+We can connect to the ksqlDB CLI, from the ``docker-compose/`` repository of Docker Compose, with the command :
 
 ``` 
-docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
+docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088 
 ```
 
 Once in the ksqlDB CLI, the different UDFs at your disposal can be listed with the function :
