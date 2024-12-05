@@ -25,7 +25,7 @@ These modules empower you to use data, enrich their streams, and send real-time 
 Built for flexibility and performance, these modules include the **Docker Compose**, **iGrafx Connectors**, and **iGrafx UDFs (User-Defined Functions)**, 
 offering a complete solution for modern data streaming and analytics workflows.
 
-The **[iGrafx LiveConnect](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-liveconnect)** module provides a Kafka infrastructure setup located in the docker-compose/ subdirectory. It includes essential components for managing and interacting with Kafka
+The **[Docker Compose](https://github.com/igrafx/miningkafka/blob/master/howto.md#docker-compose)** module provides a Kafka infrastructure setup located in the docker-compose/ subdirectory. It includes essential components for managing and interacting with Kafka
 
 In the **iGrafx Connectors** module, you will find 2 connectors.
 
@@ -63,7 +63,7 @@ You may also explore other iGrafx opensource projects such as the [iGrafx Mining
 ## Quickstart
 
 This Quickstart guide provides step-by-step instructions for getting into the iGrafx Kafka Modules. 
-You will learn how to clone the repository, launch **LiveConnect**, 
+You will learn how to clone the repository, launch **Docker Compose**, 
 interact with the **ksqlDB CLI** and **Kafka UI**, and configure **iGrafx Connectors** and **User Defined Functions (UDFs)**.
 Each component can be run locally, giving you flexibility for testing and development.
 
@@ -80,26 +80,26 @@ Follow these links for installation instructions:
 - [Docker](https://docs.docker.com/get-started/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-### Step 2: Launch iGrafx LiveConnect
+### Step 2: Launch Docker Compose
 This module provides a Kafka infrastructure setup located in the `docker-compose/` subdirectory. 
 It includes essential components for managing and interacting with Kafka.
-#### Starting LiveConnect
+#### Starting the infrastructure
 
-1. Navigate to the LiveConnect directory:
+1. Navigate to the docker compose directory:
 ```
-cd igrafx-liveconnect/docker-compose/
+cd docker-compose/
 ````
 
-2. Start LiveConnect:
+2. Start the infrastructure with the following command:
 ``` bash
-make liveconnect
+make start
 ```
 
-#### Stopping LiveConnect
+#### Stopping Docker Compose
 
-To stop **LiveConnect** run the following command:
+To stop **Docker Compose** run the following command:
 ```bash
-make liveconnect-down
+make stop
 ```
 
 #### Cleaning Up
@@ -118,7 +118,7 @@ you can delete the ``/data`` folder that is in the ``/docker-compose`` directory
 
 #### Access the ksqlDB CLI
 
-1. With LiveConnect running, type the following command from `/docker-compose` in a terminal to connect to the CLI:
+1. With the infrastructure running, type the following command from `/docker-compose` in a terminal to connect to the CLI:
 ````bash
 docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
 ````
@@ -136,13 +136,13 @@ the topics, the ksql pipelines you created and more.
 
 1. Open your browser and navigate to http://localhost:9021/ to access the Kafka UI.
 
-2. Use the credentials from the `docker-compose.yml`, located in the `/igrafx-liveconnect` directory under the `JAVA_OPTS` variable:
+2. Use the credentials from the `docker-compose.yml`, located in the `/docker-compose` directory under the `JAVA_OPTS` variable:
 
 !![Kafka UI Credentials](./imgs/java_opts.png)
    - `Dspring.security.user.name` represents the username.
    - `Dspring.security.user.password` represents the password.
 
-If you wish to change the credentials, you can do so by editing the `docker-compose.yml` file in the `/igrafx-liveconnect` directory.
+If you wish to change the credentials, you can do so by editing the `docker-compose.yml` file in the `/docker-compose` directory.
 to do so, replace the `admin` value of the `Dspring.security.user.name` and `Dspring.security.user.password` variables with your desired credentials.
 
 >If you are unfamiliar with Kafka UI, you may follow these links:
@@ -220,7 +220,7 @@ Now, by relaunching the docker compose with the ``make start`` command, you will
 ````sql
 SHOW CONNECTORS;
 ````
-Finally, if one connector has a ``FAILED`` state, you can check the logs in ``Kafka-connect`` by using the following command from the ``/docker-compose`` directory in the Liveconnect module :
+Finally, if one connector has a ``FAILED`` state, you can check the logs in ``Kafka-connect`` by using the following command from the ``/docker-compose`` directory in the Docker Compose module :
 ````bash
 docker-compose logs -f connect
 ````
@@ -229,7 +229,7 @@ docker-compose logs -f connect
 
 UDFs (User Defined Functions) are useful for applying custom transformations to each value in a specific column of a stream.
 The **iGrafx UDFs** module offers a set of User-Defined Functions (UDFs) specifically designed to enhance data transformation and analysis within the Kafka ecosystem.
-You can create custom UDFs and integrate them into LiveConnect, making them available for use in data pipelines to enhance processing and transformation capabilities.
+You can create custom UDFs and integrate them into the environment, making them available for use in data pipelines to enhance processing and transformation capabilities.
 
 There are 3 existing UDFs in the **iGrafx UDFs** module:
 - The **[iGrafx Case Events UDF](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-case-events-udf)**  retrieves detailed information related to specific case IDs within Druid.
