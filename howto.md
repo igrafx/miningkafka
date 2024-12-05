@@ -7,20 +7,41 @@ These modules enable real-time data processing and transformation, allowing you 
 
 Using these modules, you can configure kafka connectors, define custom UDFs (User-Defined Functions), and enable live connections for seamless data streaming and analysis.
 
+The **[iGrafx LiveConnect](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-liveconnect)** module provides a Kafka infrastructure setup located in the docker-compose/ subdirectory. It includes essential components for managing and interacting with Kafka
+
+In the **iGrafx Connectors** module, you will find 2 connectors.
+
+- The **[iGrafx Aggregation Connector](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-aggregation)** allows you to aggregate multiple records originating from the same partition into a single, structured array.
+- The **[iGrafx Aggregation and Sink Connector](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-aggregation-main-aggregation-and-igrafx-sink-connector)** allows you to aggregate and send data from Kafka to the iGrafx Mining platform.
+
+In the **iGrafx UDFs** module, you will find 3 UDFs.
+
+- The **[iGrafx Case Events UDF](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-case-events-udf)**  retrieves detailed information related to specific case IDs within Druid.
+- The **[iGrafx Sessions UDF](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-sessions-udf)**  takes a collection of lines and organizes them into separate sessions.Each session groups related events.
+- The **[iGrafx Transposition UDF](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-transposition-udf)**  transforms a single row containing multiple dates, each associated with specific activities, into multiple rows—each with a single date (or period) linked to its corresponding activity.
+
 Please note that an iGrafx account is required to fully utilize these modules. For account setup, please contact iGrafx support.
 
-Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.com/igrafx/miningkafka).
+Find the home page of the GitHub repository for the iGrafx Kafka Modules [here](https://github.com/igrafx/miningkafka).
+
+To begin with ksqlDB and Kafka, you may follow these links:
+
+- [Main documentation](https://docs.confluent.io/platform/current/ksqldb/overview.html)
+- [ksqlDB Tutorials](https://docs.confluent.io/platform/current/ksqldb/tutorials/overview.html)
+- [Video Courses](https://developer.confluent.io/courses/#fundamentals)
+- [Confluent Developer](https://developer.confluent.io/)
 
 ***
 
 ## Table of Contents
 
 - [Quickstart](#quickstart)
-  - [Docker Compose: Quickstart](#docker-compose-quickstart)
-  - [ksqlDB CLI and Kafka UI: Quickstart](#ksqldb-cli-and-kafka-ui-quickstart)
-  - [Getting the JAR builds from the CI/CD pipelines](#getting-the-jar-builds-from-the-cicd-pipelines)
-  - [iGrafx Connectors: Quickstart](#igrafx-connectors-quickstart)
-  - [iGrafx UDFs: Quickstart](#igrafx-udfs-quickstart)
+  - [Step 1: Clone the Repository](#step-1-clone-the-repository)
+  - [Step 2: Launch iGrafx LiveConnect](#step-2-launch-igrafx-liveconnect)
+  - [Step 3: Use the ksqlDB CLI and Kafka UI](#step-3-use-the-ksqldb-cli-and-kafka-ui)
+  - [Step 4: Retrieve JAR Files from the CI/CD Pipelines](#step-4-retrieve-jar-files-from-the-cicd-pipelines)
+  - [Step 5: Set Up iGrafx Connectors](#step-5-set-up-igrafx-connectors)
+  - [Step 6: Set Up iGrafx UDFs](#step-6-set-up-igrafx-udfs)
 
 - [Docker Compose](#docker-compose)
   - [Requirements](#requirements)
@@ -74,14 +95,16 @@ Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.co
   - [Basic iGrafx Connector Example](#basic-igrafx-connector-example)
   - [Full Data Pipeline Example](#full-data-pipeline-example)
     - [Data Pipeline Overview](#data-pipeline-overview)
-    - [Source Files](#source-files)
-    - [Connectors and UDF Installation](#connectors-and-udf-installation)
-    - [Connector for Process Mining Platform](#connector-for-process-mining-platform)
-    - [Connector for CSV Files](#connector-for-csv-files)
-    - [Custom UDFs](#custom-udfs)
-  - [1. Source Connectors](#1-source-connectors)
-  - [2. Streams and Data Transformation](#2-streams-and-data-transformation)
-  - [3. Sending Data to the iGrafx Mining Platform](#3-sending-data-to-the-igrafx-mining-platform)
+    - [Preparation for the pipeline](#preparation-for-the-pieline)
+      - [Source Files](#source-files)
+      - [Connectors and UDF Installation](#connectors-and-udf-installation)
+      - [Connector for Process Mining Platform](#connector-for-process-mining-platform)
+      - [Connector for CSV Files](#connector-for-csv-files)
+      - [Custom UDFs](#custom-udfs)
+    - [Steps for the pipeline:](#steps-for-the-pipeline)
+      - [1. Source Connectors](#1-source-connectors)
+      - [2. Streams and Data Transformation](#2-streams-and-data-transformation)
+      - [3. Sending Data to the iGrafx Mining Platform](#3-sending-data-to-the-igrafx-mining-platform)
   - [Aggregation Connector Examples](#aggregation-connector-examples)
     - [Example 1](#example-1)
     - [Example 2](#example-2)
@@ -99,65 +122,103 @@ Find the GitHub repository for the iGrafx Kafka Modules [here](https://github.co
 
 ## Quickstart
 
-This Quickstart guide covers setting up iGrafx Kafka Modules,
-from cloning the repository to managing data streams and transformations.
-It includes instructions for configuring **the Docker Compose**,
-using the **ksqlDB CLI** and **Kafka UI** to manage topics and connectors,
-setting up **iGrafx Connectors** for streaming data, and implementing **User Defined Functions (UDFs)** for custom data transformations.
+This Quickstart guide provides step-by-step instructions for getting into the iGrafx Kafka Modules.
+You will learn how to clone the repository, launch **LiveConnect**,
+interact with the **ksqlDB CLI** and **Kafka UI**, and configure **iGrafx Connectors** and **User Defined Functions (UDFs)**.
 Each component can be run locally, giving you flexibility for testing and development.
 
+By following these steps, you can set up and use iGrafx Kafka Modules, manage data streams and transformations, and enhance your workflows with connectors and UDFs.
 
-To use the iGrafx Kafka Modules, first, clone the repository:
+### Step 1: Clone the Repository
 
+Clone the iGrafx Kafka Modules repository to your local machine:
 ```
 git clone https://github.com/igrafx/miningkafka.git
 ```
-Then, make sure you have Docker and Docker Compose installed on your system.
+Ensure you have Docker and Docker Compose installed on your system.
 Follow these links for installation instructions:
 - [Docker](https://docs.docker.com/get-started/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-### Docker Compose: Quickstart
+### Step 2: Launch iGrafx LiveConnect
+This module provides a Kafka infrastructure setup located in the docker-compose/ subdirectory.
+It includes essential components for managing and interacting with Kafka.
+#### Starting LiveConnect
 
-To launch the infrastructure run the following command:
+1. Navigate to the LiveConnect directory:
 ```
-cd docker-compose/
-make start
+cd igrafx-liveconnect/docker-compose/
 ````
 
-To stop the infrastructure run the following command:
+2. Start LiveConnect:
+``` bash
+make liveconnect
 ```
-make stop
+
+#### Stopping LiveConnect
+
+To stop **LiveConnect** run the following command:
+```bash
+make liveconnect-down
 ```
-Furthermore, if you want to remove all the streams, tables or connectors and delete the data you inserted during your tests,
+
+#### Cleaning Up
+
+If you want to remove all the streams, tables or connectors and delete the data you inserted during your tests,
 you can delete the ``/data`` folder that is in the ``/docker-compose`` directory.
 
 
-### ksqlDB CLI and Kafka UI: Quickstart
-With the docker compose running, you can now connect to the **ksqlDB CLI** that will allow you to send the desired commands.
+### Step 3: Use the ksqlDB CLI and Kafka UI
 
-Type the following command from /docker-compose in a terminal to connect to the CLI:
+> You can use either the **ksqlDB CLI** or the **Kafka UI** to interact with your cluster. It all depends on what you desire:
+> - **ksqlDB CLI**: Ideal for executing ksql queries, managing streams, tables, and connectors programmatically, and debugging directly from the terminal.
+> - **Kafka UI**: Provides a graphical interface for visualizing your Kafka cluster, inspecting topics, monitoring pipelines, and managing configurations with ease.
+>
+> Choose the tool that best fits your workflow or combine both for maximum flexibility!
+
+#### Access the ksqlDB CLI
+
+1. With LiveConnect running, type the following command from `/docker-compose` in a terminal to connect to the CLI:
 ````bash
 docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
 ````
-Once in the CLI, you can send ksql commands, and you can quit it by typing ``exit``.
+2. Using the CLI, you can send ksql commands, and you can quit it by typing ``exit``.
 
-Moreover, Kafka UI is a user interface you can use to get information about your kafka cluster,
+>If you are unfamiliar with ksqlDB, you may follow these links:
+>
+>  - [Lexical Structure](https://docs.confluent.io/platform/current/ksqldb/reference/sql/lexical-structure.html#ksqldb-lexical-structure)
+>  - [API Index](https://docs.confluent.io/platform/current/ksqldb/developer-guide/ksqldb-reference/overview.html#ksqldb-api-index)
+
+#### Access the Kafka UI
+
+**Kafka UI** is a user interface you can use to get information about your kafka cluster,
 the topics, the ksql pipelines you created and more.
 
-You can then access it at http://localhost:9021/.
+1. Open your browser and navigate to http://localhost:9021/ to access the Kafka UI.
 
-The credentials for Kafka UI are set in the ``docker-compose.yml`` file, within the ``JAVA_OPTS`` variable.
-``-Dspring.security.user.name`` is the username and ``-Dspring.security.user.password`` is the password.
+2. Use the credentials from the `docker-compose.yml`, located in the `/igrafx-liveconnect` directory under the `JAVA_OPTS` variable:
 
-### Getting the JAR builds from the CI/CD pipelines
+!![Kafka UI Credentials](./imgs/java_opts.png)
+- `Dspring.security.user.name` represents the username.
+- `Dspring.security.user.password` represents the password.
+
+If you wish to change the credentials, you can do so by editing the `docker-compose.yml` file in the `/igrafx-liveconnect` directory.
+to do so, replace the `admin` value of the `Dspring.security.user.name` and `Dspring.security.user.password` variables with your desired credentials.
+
+>If you are unfamiliar with Kafka UI, you may follow these links:
+>
+> - [About Kafka UI](https://docs.kafka-ui.provectus.io/)
+> - [Video Courses](https://developer.confluent.io/courses/#fundamentals)
+
+
+### Step 4: Retrieve JAR Files from the CI/CD Pipelines
 
 To utilize the iGrafx Connectors and UDFs, you need the corresponding JAR files. There are two ways to obtain these files:
 
 1. **Build the JAR Files Yourself**: Follow the instructions provided in the subsequent sections to build the JAR files manually.
 2. **Retrieve JAR Files from the CI/CD Pipelines**: You can directly download the JAR files from the CI/CD pipelines in the iGrafx GitHub Project.
 
-To retrieve the JAR files from the CI/CD pipelines, follow these steps:
+To retrieve the JAR files of the iGrafx Connectors and UDFs from the CI/CD pipelines, follow these steps:
 
 1. Navigate to the **[Actions tab](https://github.com/igrafx/miningkafka/actions)** in the GitHub repository.
 2. In the left sidebar, select the workflow of interest: **iGrafx Connectors** or **UDFs**, as shown below:
@@ -184,14 +245,25 @@ To retrieve the JAR files from the CI/CD pipelines, follow these steps:
 
 By following these steps, you can easily retrieve and configure the required JAR files for iGrafx Connectors and UDFs.
 
-### iGrafx Connectors: Quickstart
-If you want to use the iGrafx Connectors to send data from Kafka to the Process360 Live,
-you must  go to the ``igrafx-connectors`` directory as follows:
+### Step 5: Set Up iGrafx Connectors
+
+The **iGrafx Kafka Connectors** module provides connectors specifically designed to streamline data flow in and out of Kafka. These connectors enable seamless integration with various data sources and destinations, allowing users to effortlessly move data into Kafka for analysis or export it for further processing.
+
+There are 2 existing connectors in the **iGrafx Kafka Connectors** module:
+
+- **iGrafx Aggregation** : aggregates Kafka records from a same partition.
+- **iGrafx Aggregation Main** : aggregates Kafka records from a same partition and send the aggregation result to the iGrafx Mining API.
+
+#### Build and configure iGrafx Connectors
+>If you have already retrieved JARS from the CI/CD pipelines, you can skip this section.
+
+1. To use the iGrafx Connectors to send data from Kafka to the Process360 Live,
+   you must  go to the ``igrafx-connectors`` directory as follows:
 
 ```bash
 cd igrafx-connectors/
 ```
-Then, you can build the desired JAR file using the following command:
+2. Now, build the desired JAR file using the following command:
 
 ```
 sbt aggregationMain/assembly
@@ -199,9 +271,12 @@ sbt aggregationMain/assembly
 Once the **JAR** is created, you can find it in the ``/igrafx-connectors/artifacts`` repository.
 Copy the latest **JAR** and paste it in the ``/docker-compose/connect-plugins/`` directory of the Docker Compose module.
 
-Now, by relaunching the docker compose with the ``make start`` command, you will now be able to use the connector in ksql.
+#### Relaunch Liveconnect
+By relaunching Liveconnect with the ``make liveconnect`` command, you will now be able to use the connector in ksql.
 
-Furthermore, if you wish to check the status of the connectors you created, use the following command in the **ksqlDB CLI**:
+#### Monitor Connectors
+
+1. To check the status of the connectors you created, use the following command in the **ksqlDB CLI**:
 
 ````sql
 SHOW CONNECTORS;
@@ -211,17 +286,27 @@ Finally, if one connector has a ``FAILED`` state, you can check the logs in ``Ka
 docker-compose logs -f connect
 ````
 
-### iGrafx UDFs: Quickstart
+### Step 6: Set Up iGrafx UDFs
+
 UDFs (User Defined Functions) are useful for applying custom transformations to each value in a specific column of a stream.
+The **iGrafx UDFs** module offers a set of User-Defined Functions (UDFs) specifically designed to enhance data transformation and analysis within the Kafka ecosystem.
+You can create custom UDFs and integrate them into LiveConnect, making them available for use in data pipelines to enhance processing and transformation capabilities.
 
-You can create custom UDFs and integrate them into the Docker Compose module, making them available for use in data pipelines to enhance processing and transformation capabilities.
+There are 3 existing UDFs in the **iGrafx UDFs** module:
+- The **[iGrafx Case Events UDF](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-case-events-udf)**  retrieves detailed information related to specific case IDs within Druid.
+- The **[iGrafx Sessions UDF](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-sessions-udf)**  takes a collection of lines and organizes them into separate sessions.Each session groups related events.
+- The **[iGrafx Transposition UDF](https://github.com/igrafx/miningkafka/blob/master/howto.md#igrafx-transposition-udf)**  transforms a single row containing multiple dates, each associated with specific activities, into multiple rows—each with a single date (or period) linked to its corresponding activity.
 
-If you want to use the iGrafx UDFs, you must first go to the ``igrafx-udfs`` directory as follows:
+
+#### Build and configure UDFs
+>If you have already retrieved JARS from the CI/CD pipelines, you can skip this section.
+
+1. To use the iGrafx UDFs, you must first go to the ``igrafx-udfs`` directory as follows:
 
 ```bash
 cd igrafx-udfs/
 ```
-Then, you can build the desired JAR file containing all the UDFsusing the following command:
+2. Build the desired JAR file containing all the UDFs using the following command:
 
 ```bash
 sbt assembly
@@ -230,15 +315,16 @@ Once the **JAR** is created, you can find it in the ``/igrafx-udfs/target/scala-
 Copy the latest **JAR** and paste it in the ``/docker-compose/extensions/`` directory of the Docker Compose module.
 If this directory doesn't exist, you can create it.
 
-Now, by relaunching the infrastructure with the ``make start`` command, you will now be able to use the UDFs in ksql.
+#### Relaunch Liveconnect
+By relaunching Liveconnect with the ``make liveconnect`` command, you will now be able to use the UDFs in ksql.
 
-Moreover, you can display a list of available UDFs using the following command in the **ksqlDB CLI**:
-
+#### Explore UDFs
+1. To display a list of available UDFs using the following command in the **ksqlDB CLI**:
 
 ````sql
 SHOW FUNCTIONS;
 ````
-You can also check the documentation of a given UDF by using the following command:
+2. To check the documentation of a given UDF by using the following command:
 
 ````sql
 DESCRIBE FUNCTION <UDF_NAME>;
@@ -310,7 +396,6 @@ Below are the installation commands for the recommended connectors:
   2. **Retrieve the Connector Jar from the pipeline**.
 
 > Note that you may also download the iGrafx UDFs by following [similar commands](#igrafx-udfs).
-
 
 ### Data-Transform Database
 
@@ -1540,6 +1625,7 @@ The illustrated use case comes from the IT ticketing domain, where ServiceNow ma
 #### Data Pipeline Overview
 ![data_pipeline](imgs/datapipeline_schema.png)
 
+### Preparation for the pieline
 #### Source Files
 
 The 2 source files can be found under the path ``/examples/example_files``.
@@ -1566,7 +1652,7 @@ After downloading, extract the contents of the archive and place them in the `do
 #### Custom UDFs
 You can install the custom UDFs by following the steps described in the [iGrafx UDFs](#igrafx-udfs) section of this document.
 
-
+### Steps for the pipeline:
 ### 1. Source Connectors
 Launch docker compose with the connectors JARs and the Jira/Snow files placed in the appropriate folders. Once it is running, enter the following requests using ksql (either via the ksql CLI or a graphical UI).
 
@@ -2946,5 +3032,6 @@ In this section, documentation can be found for further reading.
 Support is available at the following address: [support@igrafx.com](mailto:support@igrafx.com)
 
 
-* [iGrafx Help](https://fr.help.logpickr.com/)
-* [iGrafx P360 Live Mining API](https://public-api.logpickr.com/#/)
+* [iGrafx Help](https://doc.igrafxcloud.com/mining/en/index.html)
+* [iGrafx P360 Live Mining API](https://doc.igrafxcloud.com/mining/api/index.html)
+* [The KSQLDB Language](https://docs.confluent.io/platform/current/ksqldb/reference/overview.html)
