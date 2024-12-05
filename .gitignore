@@ -30,14 +30,14 @@ igrafx-connectors/.worksheet
 /igrafx-connectors/aggregationMain/target/
 /igrafx-connectors/core/target/
 
-# Liveconnect
-/igrafx-liveconnect/docker-compose/data/
-/igrafx-liveconnect/docker-compose/extensions/
-/igrafx-liveconnect/docker-compose/aggregation-sink-igrafx/
-/igrafx-liveconnect/sources/error/
-/igrafx-liveconnect/sources/input/
-/igrafx-liveconnect/sources/processed/jira_0_stream.csv/
-/igrafx-liveconnect/sources/processed/snow_0_stream.csv/
+# Docker compose and examples
+/docker-compose/data/
+/docker-compose/extensions/
+/docker-compose/aggregation-sink-igrafx/
+/examples/sources/error/
+/examples/sources/input/
+/examples/sources/processed/jira_0_stream.csv/
+/examples/sources/processed/snow_0_stream.csv/
 
 # UDFs
 /igrafx-udfs/null/

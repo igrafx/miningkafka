@@ -1567,7 +1567,7 @@ The illustrated use case comes from the IT ticketing domain, where ServiceNow ma
 
 #### Source Files
 
-The 2 source files can be found under the path ``/examples``.
+The 2 source files can be found under the path ``/examples/example_files``.
 
 The `jira_0_stream.csv` file should be placed in the `sources/input/jira` folder of the **Liveconnect** module, 
 while the `snow_0_stream.csv` file should go in the `sources/input/snow` folder of the same module.
