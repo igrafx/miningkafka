@@ -22,7 +22,7 @@ Welcome to the **iGrafx Kafka Modules**!
 The **iGrafx Kafka Modules** are open-source tools designed to integrate seamlessly with Kafka, enabling efficient data streaming, transformation, and analysis. 
 These modules empower you to use data, enrich their streams, and send real-time insights to the iGrafx Mining platform.
 
-Built for flexibility and performance, these modules include the **iGrafx LiveConnect**, **iGrafx Connectors**, and **iGrafx UDFs (User-Defined Functions)**, 
+Built for flexibility and performance, these modules include the **Docker Compose**, **iGrafx Connectors**, and **iGrafx UDFs (User-Defined Functions)**, 
 offering a complete solution for modern data streaming and analytics workflows.
 
 A detailed tutorial can be found in the [howto.md](https://github.com/igrafx/miningkafka/blob/dev/howto.md) file.
@@ -44,7 +44,7 @@ You may also explore other iGrafx opensource projects such as the [iGrafx Mining
 
 This Quickstart guide covers setting up iGrafx Kafka Modules,
 from cloning the repository to managing data streams and transformations.
-It includes instructions for configuring **LiveConnect**,
+It includes instructions for configuring **the Docker Compose**,
 using the **ksqlDB CLI** and **Kafka UI** to manage topics and connectors,
 setting up **iGrafx Connectors** for streaming data, and implementing **User Defined Functions (UDFs)** for custom data transformations.
 Each component can be run locally, giving you flexibility for testing and development.
@@ -60,24 +60,24 @@ Follow these links for installation instructions:
 - [Docker](https://docs.docker.com/get-started/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
-### iGrafx Liveconnect: Quickstart
+### Docker Compose: Quickstart
 
-To launch **LiveConnect** run the following command:
+To launch the infrastructure run the following command:
 ```
-cd igrafx-liveconnect/docker-compose/
-make liveconnect
+cd docker-compose/
+make start
 ````
 
-To stop **LiveConnect** run the following command:
+To stop the infrastructure run the following command:
 ```
-make liveconnect-down
+make stop
 ```
 Furthermore, if you want to remove all the streams, tables or connectors and delete the data you inserted during your tests,
 you can delete the ``/data`` folder that is in the ``/docker-compose`` directory.
 
 
 ### ksqlDB CLI and Kafka UI: Quickstart
-With liveconnect running, you can now connect to the **ksqlDB CLI** that will allow you to send the desired commands.
+With the docker compose running, you can now connect to the **ksqlDB CLI** that will allow you to send the desired commands.
 
 Type the following command from /docker-compose in a terminal to connect to the CLI:
 ````bash
@@ -119,11 +119,11 @@ To retrieve the JAR files from the CI/CD pipelines, follow these steps:
 5. Locate and click on **igrafx-connectors-artifacts** (or **igrafx-udfs-artifacts** for the UDFs workflow) to download a ZIP file containing the JAR files.
 
 6. Once downloaded, extract the desired JAR files:
-- Place the **Connectors JAR files** in the `igrafx-liveconnect/docker-compose/connect-plugins/` directory of the **iGrafx Liveconnect** module. This allows them to be used in the **ksqlDB CLI**.
+- Place the **Connectors JAR files** in the `docker-compose/connect-plugins/` directory of the **Docker Compose** module. This allows them to be used in the **ksqlDB CLI**.
 
   ![iGrafx Connectors CI](./imgs/igrafx-connectors-ci-3.png)
 
-- For **UDFs JAR files**, place them in the `igrafx-liveconnect/docker-compose/extensions/` directory of the **iGrafx Liveconnect** module. If this directory does not exist, create it.
+- For **UDFs JAR files**, place them in the `docker-compose/extensions/` directory of the **Docker Compose** module. If this directory does not exist, create it.
 
 By following these steps, you can easily retrieve and configure the required JAR files for iGrafx Connectors and UDFs.
 
@@ -140,16 +140,16 @@ Then, you can build the desired JAR file using the following command:
 sbt aggregationMain/assembly
 ````
 Once the **JAR** is created, you can find it in the ``/igrafx-connectors/artifacts`` repository.
-Copy the latest **JAR** and paste it in the ``/docker-compose/connect-plugins/`` directory of the iGrafx Liveconnect module.
+Copy the latest **JAR** and paste it in the ``/docker-compose/connect-plugins/`` directory of the Docker Compose module.
 
-Now, by relaunching Liveconnect with the ``make liveconnect`` command, you will now be able to use the connector in ksql.
+Now, by relaunching the docker compose with the ``make start`` command, you will now be able to use the connector in ksql.
 
 Furthermore, if you wish to check the status of the connectors you created, use the following command in the **ksqlDB CLI**:
 
 ````sql
 SHOW CONNECTORS;
 ````
-Finally, if one connector has a ``FAILED`` state, you can check the logs in ``Kafka-connect`` by using the following command from the ``/docker-compose`` directory in the Liveconnect module :
+Finally, if one connector has a ``FAILED`` state, you can check the logs in ``Kafka-connect`` by using the following command from the ``/docker-compose`` directory in the Docker Compose module :
 ````bash
 docker-compose logs -f connect
 ````
@@ -157,7 +157,7 @@ docker-compose logs -f connect
 ### iGrafx UDFs: Quickstart
 UDFs (User Defined Functions) are useful for applying custom transformations to each value in a specific column of a stream.
 
-You can create custom UDFs and integrate them into LiveConnect, making them available for use in data pipelines to enhance processing and transformation capabilities.
+You can create custom UDFs and integrate them into the Docker Compose module, making them available for use in data pipelines to enhance processing and transformation capabilities.
 
 If you want to use the iGrafx UDFs, you must first go to the ``igrafx-udfs`` directory as follows:
 
@@ -170,10 +170,10 @@ Then, you can build the desired JAR file containing all the UDFsusing the follow
 sbt assembly
 ```
 Once the **JAR** is created, you can find it in the ``/igrafx-udfs/target/scala-2.13`` repository.
-Copy the latest **JAR** and paste it in the ``/docker-compose/extensions/`` directory of the iGrafx Liveconnect module.
+Copy the latest **JAR** and paste it in the ``/docker-compose/extensions/`` directory of the Docker Compose module.
 If this directory doesn't exist, you can create it.
 
-Now, by relaunching Liveconnect with the ``make liveconnect`` command, you will now be able to use the UDFs in ksql.
+Now, by relaunching the infrastructure with the ``make start`` command, you will now be able to use the UDFs in ksql.
 
 Moreover, you can display a list of available UDFs using the following command in the **ksqlDB CLI**:
 
