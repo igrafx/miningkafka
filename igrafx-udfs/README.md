@@ -254,7 +254,7 @@ Once Docker Compose is launched, the connector will be available for use.
 We can connect to the ksqlDB CLI, from the ``docker-compose/`` repository of Docker Compose, with the command :
 
 ``` 
-docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088
+docker-compose exec ksqldb-cli ksql http://ksqldb-server:8088 
 ```
 
 Once in the ksqlDB CLI, the different UDFs at your disposal can be listed with the function :
