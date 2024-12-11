@@ -23,14 +23,14 @@ services:
       - kafka-network
 
   broker:
-    image: confluentinc/cp-enterprise-kafka:${CONFLUENT_PLATFORM}
+    image: confluentinc/cp-kafka:${CONFLUENT_PLATFORM}
     hostname: broker
     container_name: broker
     depends_on:
       - zk
     ports:
 #      - "29092:29092" # internal broker port not to be exposed 
-      - "9092:9092" # broker port tcp 
+      - "9092:9092" # broker port tcp
       - "19092:19092"
 #      - "9101:9101" # JMX port not exposed yet
     environment:
@@ -79,11 +79,12 @@ services:
       - schema-registry
     expose:
       - "8083" 
-    # ports:
-    #   - "8083:8083" 
+    ports:
+      - "8083:8083"
     volumes:
       - ./connect-plugins:/connect-plugins
       - ./aggregation-sink-igrafx:/aggregation-sink-igrafx:rw
+      - ./avatica-1.25.0.jar:/usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
       # SFTP directories access
       - ./data/sftp/foo/upload:/sftp/foo/upload:rw  #  example data from sftp account foo
       - ./data/sftp/foo/processed:/sftp/foo/processed:rw  #  example data from sftp account foo, processed
@@ -110,13 +111,14 @@ services:
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_PLUGIN_PATH: "/usr/share/java,/connect-plugins,/usr/share/confluent-hub-components,/usr/share/filestream-connectors"
       CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+      CLASSPATH: /usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
 
     restart: always
     networks:
       - kafka-network
 
   ksqldb-server:
-    image: confluentinc/ksqldb-server:${KSQLDB_VERSION}
+    image: confluentinc/cp-ksqldb-server:${CONFLUENT_PLATFORM}
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
@@ -126,7 +128,7 @@ services:
     expose:
       - "8088" 
     # ports:
-    #   - "8088:8088" 
+    #   - "8088:8088"
     volumes:
       - "./extensions/:/opt/ksqldb-udfs"
     environment:
