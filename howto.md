@@ -3140,7 +3140,7 @@ VALUE_FORMAT='DELIMITED'
 SELECT
 'New alert for case ' + caseid + ' has been detected! ' +
 'For more details, visit: ' +
-'https://mining.dev2.igrafxcloud.com/workgroups/' + CAST('<Workgroup ID>' AS VARCHAR) +
+'https://<your-mining-platform>/workgroups/' + CAST('<Workgroup ID>' AS VARCHAR) +
 '/projects/<Project ID>/case-explorer/' + caseid AS alert_message
 FROM alerts_stream
 EMIT CHANGES;
