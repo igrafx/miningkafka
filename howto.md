@@ -116,7 +116,8 @@ To begin with ksqlDB and Kafka, you may follow these links:
     - [Variation 1](#variation-1-1)
     - [Variation 2](#variation-2-1)
     - [3rd UDF Example](#3rd-udf-example)
-  - [Alerting with Kafka](#alerting-with-kafka)
+  - [Alerting with Kafka Using Slack](#alerting-with-kafka-using-slack)
+  - [Alerting with Kafka Using Email](#alerting-with-kafka-using-mail)
 
 - [Further Documentation](#further-documentation)
 
@@ -3024,7 +3025,7 @@ This can be problematic if, for instance, we then want to sum all the values in 
 
 Here, the calculated value would be **5x240**, whereas the real total price of the process is 240.
 
-### Alerting with Kafka
+### Alerting with Kafka using Slack
 
 It is possible to send alerts to a preferred destination with Kafka.
 
@@ -3153,6 +3154,149 @@ Now when there are updated cases that have a duration greater than 40000000000, 
 It will look like this:
 
 ![Image](./imgs/alerting.png)
+
+If you want to check the detected connectors you may do the following:
+
+```bash
+curl -s http://localhost:8083/connector-plugins | jq
+```
+
+### Alerting with Kafka using Mail
+
+It is possible to send alerts to a specified email with Kafka.
+
+Here, we will send a notification to **a given email** when there is a new version of a **CASE ID** that matches a specific pattern.
+Here that pattern is when the **duration** is greater than **40000000000**.
+
+First we must get setup.
+
+We need the **Kafka JDBC Source connector**, which can be found [here](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc).
+
+Note that for this connector to work with Druid we also need the **Avatica Connector**. It can be found [here](https://mvnrepository.com/artifact/org.apache.calcite.avatica/avatica).
+Make sure to take the **Shaded version**. You can place it in the ``connect-plugins`` folder of the **`docker-compose`** directory.
+
+Then, add the following line to the **volumes** section of the **connect** container in the **`docker-compose.yml`** file:
+````bash
+      - ./avatica-1.25.0.jar:/usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
+````
+
+You must then add this variable to the **environment** section of the **connect** container in the **`docker-compose.yml`** file:
+````docker
+      CLASSPATH: /usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
+````
+
+Now, check the `.env` file and make sure you have the following versions for `CONFLUENT_PLATFORM` AND `KSQLDB_VERSION`/
+
+````bash
+CONFLUENT_PLATFORM=7.8.0
+KSQLDB_VERSION=0.29.0
+````
+You must now retrieve the **Camel Mail Sink Kafka Connector**, which can be found [here](https://camel.apache.org/camel-kafka-connector/next/reference/index.html).
+You can also find the matching documentation [here](https://camel.apache.org/camel-kafka-connector/4.8.x/reference/connectors/camel-mail-sink-kafka-sink-connector.html).
+
+Place the **Camel Mail Sink Kafka Connector** and the **Kafka JDBC Source connector** in the `docker-compose/connect-plugins/` directory, as referenced by the `CONNECT_PLUGIN_PATH` variable in the `docker-compose.yml`.
+
+![Connect plugin](./imgs/connec-plugins-mail.png)
+
+Place the **Avatica Connector** at the root of the `docker-compose` directory.
+
+Moreover, we can now create the necessary connectors and streams to make it work.
+
+The first step is to create the JDBC Connector. That can be done with the following command:
+`````shell
+CREATE SOURCE CONNECTOR jdbc_source_alerts WITH (
+'connector.class'= 'io.confluent.connect.jdbc.JdbcSourceConnector',
+'errors.log.include.messages'= 'true',
+'incrementing.column.name'= 'version',
+'connection.password'= '<Workgroup Key>',
+'validate.non.null'= 'false',
+'tasks.max'= '1',
+'query'= 'SELECT * FROM (SELECT caseid, version FROM "<Project ID>" WHERE LOOKUP("case_version", ''<Project ID>'') IS NULL  AND duration>40000000000 GROUP BY caseid, version ORDER BY version ASC)',
+'mode'= 'incrementing',
+'value.converter.schema.registry.url'= 'http://schema-registry:8081',
+'topic.prefix'= 'alerts_',
+'connection.user'= '<Workgroup ID>',
+'poll.interval.ms'= '3000',
+'name'= 'JDBC_SOURCE_ALERTS',
+'errors.tolerance'= 'all',
+'value.converter'= 'io.confluent.connect.avro.AvroConverter',
+'connection.url'= '<JDBC Connection URL>',
+'errors.log.enable'= 'true',
+'key.converter'= 'io.confluent.connect.avro.AvroConverter',
+'key.converter.schema.registry.url'= 'http://schema-registry:8081'
+);
+`````
+
+Replace the **Workgroup Key** with your Workgroup Key, **Workgroup ID** with your Workgroup ID, **Project ID** with your Project ID and **JDBC Connection URL** with your JDBC Connection URL.
+These information may be found in the iGrafx workgroup settings, under the **Open API** tab.
+
+You may also change the query if you desire other information.
+
+The SQL query under the `query` parameter means that the **CASEIDs** that have a duration greater than 40000000000  will be sent to Kafka.
+
+Now let us create the Camel Mail Sink Kafka Connector. That can be done with the following command:
+`````shell
+CREATE SINK CONNECTOR camel_mail_sink WITH (
+'connector.class' = 'org.apache.camel.kafkaconnector.mailsink.CamelMailsinkSinkConnector',
+'camel.kamelet.mail-sink.connectionHost' = '<Mail Connection Host>',
+'camel.kamelet.mail-sink.username' = '<Mail Username>',
+'camel.kamelet.mail-sink.password' = '<Mail Password>',  
+'camel.kamelet.mail-sink.connectionPort' = '<Mail Connection Port>', 
+'camel.kamelet.mail-sink.from' = '<From email>',
+'camel.kamelet.mail-sink.to' = '<Email Recipient>',  -- Replace with actual recipient
+'camel.kamelet.mail-sink.subject' = 'New Alert Notification',
+'tasks.max' = '1',
+'topics' = 'email_alerts_topic',
+'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+'key.converter' = 'org.apache.kafka.connect.storage.StringConverter'
+);
+``````
+
+Replace the **Mail Connection Host** with the mail server host (Example: smtp.gmail.com), **Mail Username** with the username to access the mail box,
+**Mail Password** with the password to access the mail box, **Mail Connection Port** with the mail server port, **From email** with the sender email and **Email Recipient** with the recipient email address.
+
+> If this connector is not being detected, make sure your images are up to date. If not please check the docker hub [here](https://hub.docker.com/r/confluentinc/cp-kafka/) for the latest version of each image.
+
+With the connectors having been created, we can now create the KSQLDB streams.
+First do this command:
+```bash
+SET 'auto.offset.reset'='earliest'; 
+```
+This command sets the offset to the earliest, ensuring that the CLI reads from the beginning of each topic.
+
+Now we create a stream to read the retrieved cases from the JDBC Connector.
+
+```bash
+CREATE STREAM alerts_stream WITH (
+KAFKA_TOPIC='alerts_',
+VALUE_FORMAT='AVRO'
+);
+```
+
+Finally we create a stream to send the alerts to the Camel Mail Sink Kafka Connector.
+````bash
+CREATE STREAM email_alerts_stream WITH (
+KAFKA_TOPIC = 'email_alerts_topic',
+VALUE_FORMAT = 'DELIMITED'
+) AS
+SELECT
+'New alert for case ' + caseid +
+' has been detected! For more details, visit: ' +
+'https://<Your Mining Platform>/workgroups/' +
+CAST('<Your Workgroup ID>' AS VARCHAR) +
+'/projects/<Your Project ID>/case-explorer/' + caseid + ' '
+AS alert_message
+FROM alerts_stream
+EMIT CHANGES;
+````
+
+Replace the **Workgroup ID** with your Workgroup ID, **Project ID** with your Project ID and **Your Mining Platform** with your Mining Platform.
+
+Now when there are updated cases that have a duration greater than 40000000000, the alert will be sent to the specified email address.
+
+It will look like this:
+
+![Image](./imgs/email_notif.png)
 
 If you want to check the detected connectors you may do the following:
 
