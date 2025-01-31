@@ -12,16 +12,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: List Available Artifacts
+        run: ls -R ${{ runner.temp }}/artifact
 
       - name: Download igrafx-udfs-artifact
         uses: actions/download-artifact@v4
         with:
           name: igrafx-udfs-artifact
+          path: artifacts/udfs
 
       - name: Download igrafx-connectors-artifacts
         uses: actions/download-artifact@v4
         with:
           name: igrafx-connectors-artifacts
+          path: artifacts/connectors
 
       - name: List downloaded artifact files
         run: ls -R artifacts/
