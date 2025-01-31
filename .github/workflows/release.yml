@@ -23,7 +23,7 @@ jobs:
           name: igrafx-udfs-artifact
           path: artifacts/udfs
           repo: igrafx/miningkafka  # Replace with your actual repo
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download igrafx-connectors-artifacts
         uses: dawidd6/action-download-artifact@v2
@@ -32,7 +32,7 @@ jobs:
           name: igrafx-connectors-artifacts
           path: artifacts/connectors
           repo: igrafx/miningkafka  # Replace with your actual repo
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List downloaded artifact files
         run: ls -R artifacts/
