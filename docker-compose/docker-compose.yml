@@ -29,22 +29,38 @@ services:
     depends_on:
       - zk
     ports:
-#      - "29092:29092" # internal broker port not to be exposed 
+      - "29092:29092" # internal broker port not to be exposed
       - "9092:9092" # broker port tcp
       - "19092:19092"
-#      - "9101:9101" # JMX port not exposed yet
+    #      - "9101:9101" # JMX port not exposed yet
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zk:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_PRIV_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:39092,PLAINTEXT_PRIV_HOST://192.168.1.128:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+      KAFKA_BOOTSTRAP_SERVERS: 'localhost:9092'
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_JMX_PORT: 9101
-#      KAFKA_LOG_RETENTION_MINUTES: 10  # important, ne pas remplir les disques si les données sont produites en permanence
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_MESSAGE_MAX_BYTES: 200000000  # 200 MB
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 200000000
+      #      KAFKA_LOG_RETENTION_HOURS: 1 # important, ne pas remplir les disques si les données sont produites en permanence
+      KAFKA_HEAP_OPTS: "-Xmx256M -Xms256M"
+    #      KAFKA_BROKER_ID: 1
+    #      KAFKA_ZOOKEEPER_CONNECT: 'zk:2181'
+    #      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_PRIV_HOST:PLAINTEXT
+    #      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:39092,PLAINTEXT_PRIV_HOST://192.168.1.128:19092
+    #      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+    #      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    #      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    #      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    #      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+    #      KAFKA_JMX_PORT: 9101
+    #      KAFKA_LOG_RETENTION_MINUTES: 10  # important, ne pas remplir les disques si les données sont produites en permanence
     volumes:
       - ./data/kafka-data-volume:/var/lib/kafka/data
     restart: always
@@ -58,9 +74,9 @@ services:
     depends_on:
       - broker
     expose:
-      - "8081" 
+      - "8081"
     ports:
-      - "8081:8081" 
+      - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: ${BROKERS}
@@ -78,7 +94,7 @@ services:
       - broker
       - schema-registry
     expose:
-      - "8083" 
+      - "8083"
     ports:
       - "8083:8083"
     volumes:
@@ -126,7 +142,7 @@ services:
       - schema-registry
       - connect
     expose:
-      - "8088" 
+      - "8088"
     # ports:
     #   - "8088:8088"
     volumes:
@@ -144,7 +160,7 @@ services:
       KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
       KSQL_KSQL_EXTENSION_DIR: "/opt/ksqldb-udfs"
       KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: "earliest"
-#      KSQL_KSQL_SERVICE_ID: "workgroup1_"
+    #      KSQL_KSQL_SERVICE_ID: "workgroup1_"
     restart: always
     networks:
       - kafka-network
@@ -190,7 +206,7 @@ services:
       - kafka-network
 
 
-# Optionnel : postgres pour transformations intermédiaires
+  # Optionnel : postgres pour transformations intermédiaires
   data-transform:
     image: postgres:14
     hostname: data-transform
@@ -211,7 +227,7 @@ services:
       - kafka-network
     restart: always
 
-# Optionnel : serveur sftp pour upload de fichiers
+  # Optionnel : serveur sftp pour upload de fichiers
   sftp:
     image: corilus/sftp
     volumes:
@@ -227,9 +243,9 @@ services:
 
 
 
-###########################
-# Reverse proxy for HTTPS #
-###########################
+  ###########################
+  # Reverse proxy for HTTPS #
+  ###########################
 
   nginx:
     image: nginx
@@ -284,4 +300,3 @@ services:
     environment:
       - NGINX_HOST=${HOST}
       - WORKGROUP_ID=${WORKGROUP_ID}
-
