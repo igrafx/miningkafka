@@ -12,20 +12,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: List Available Artifacts
-        run: ls -R ${{ runner.temp }}/artifact
+      - name: List Uploaded Artifacts
+        run: ls -R ${{ runner.temp }}
 
+      # 🔽 NEW: Download artifacts from the workflow that uploaded them
       - name: Download igrafx-udfs-artifact
-        uses: actions/download-artifact@v4
+        uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: igrafx-udfs-ci.yml  # Change this to the actual workflow filename that uploads the artifact
           name: igrafx-udfs-artifact
           path: artifacts/udfs
+          repo: igrafx/miningkafka  # Replace with your actual repo
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download igrafx-connectors-artifacts
-        uses: actions/download-artifact@v4
+        uses: dawidd6/action-download-artifact@v2
         with:
+          workflow: igrafx-connectors-ci.yml  # Change this to the actual workflow filename
           name: igrafx-connectors-artifacts
           path: artifacts/connectors
+          repo: igrafx/miningkafka  # Replace with your actual repo
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List downloaded artifact files
         run: ls -R artifacts/
@@ -48,7 +55,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/udfs/igrafx-udfs-artifact.zip  # Replace with actual file name
-          asset_name: your-udfs-file.zip  # Replace with actual file name
+          asset_name: igrafx-udfs-artifact.zip  # Replace with actual file name
           asset_content_type: application/zip
 
       - name: Upload igrafx-connectors-artifacts to Release
@@ -58,5 +65,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: artifacts/connectors/igrafx-connectors-artifact.zip  # Replace with actual file name
-          asset_name: your-connectors-file.zip  # Replace with actual file name
+          asset_name: igrafx-connectors-artifact.zip  # Replace with actual file name
           asset_content_type: application/zip
