@@ -12,6 +12,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: List downloaded artifact files
+        run: ls -R artifacts/
+
       - name: Download igrafx-udfs-artifact
         uses: actions/download-artifact@v4
         with:
@@ -41,7 +44,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/udfs/your-udfs-file.zip  # Replace with actual file name
+          asset_path: artifacts/udfs/igrafx-udfs-artifact.zip  # Replace with actual file name
           asset_name: your-udfs-file.zip  # Replace with actual file name
           asset_content_type: application/zip
 
@@ -51,6 +54,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/connectors/your-connectors-file.zip  # Replace with actual file name
+          asset_path: artifacts/connectors/igrafx-connectors-artifact.zip  # Replace with actual file name
           asset_name: your-connectors-file.zip  # Replace with actual file name
           asset_content_type: application/zip
