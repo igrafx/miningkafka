@@ -43,8 +43,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: "Release ${{ github.ref_name }}"
+          name: "Release ${{ github.ref_name }}"
           draft: false
+          make_latest: true
+          generate_release_notes: true
           prerelease: false
 
       - name: Upload igrafx-udfs-artifact to Release
