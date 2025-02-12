@@ -48,23 +48,26 @@ jobs:
           make_latest: true
           generate_release_notes: true
           prerelease: false
+          files: |
+            artifacts/udfs/igrafx-udfs-artifact.zip
+            artifacts/connectors/igrafx-connectors-artifact.zip
 
-      - name: Upload igrafx-udfs-artifact to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/udfs/igrafx-udfs-artifact.zip  # Replace with actual file name
-          asset_name: igrafx-udfs-artifact.zip  # Replace with actual file name
-          asset_content_type: application/zip
-
-      - name: Upload igrafx-connectors-artifacts to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/connectors/igrafx-connectors-artifact.zip  # Replace with actual file name
-          asset_name: igrafx-connectors-artifact.zip  # Replace with actual file name
-          asset_content_type: application/zip
+#      - name: Upload igrafx-udfs-artifact to Release
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: artifacts/udfs/igrafx-udfs-artifact.zip  # Replace with actual file name
+#          asset_name: igrafx-udfs-artifact.zip  # Replace with actual file name
+#          asset_content_type: application/zip
+#
+#      - name: Upload igrafx-connectors-artifacts to Release
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: artifacts/connectors/igrafx-connectors-artifact.zip  # Replace with actual file name
+#          asset_name: igrafx-connectors-artifact.zip  # Replace with actual file name
+#          asset_content_type: application/zip
