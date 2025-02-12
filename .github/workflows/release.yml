@@ -37,9 +37,8 @@ jobs:
       - name: List downloaded artifact files
         run: ls -R artifacts/
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1.1.4
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
