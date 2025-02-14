@@ -23,6 +23,8 @@ In the **iGrafx UDFs** module, you will find 3 UDFs.
 
 Please note that an iGrafx account is required to fully utilize these modules. For account setup, please contact iGrafx support.
 
+This version of the iGrafx Mining Kafka Modules is compatible with platforms of version 2.32.0 and above.
+
 Find the home page of the GitHub repository for the iGrafx Kafka Modules [here](https://github.com/igrafx/miningkafka).
 
 To begin with ksqlDB and Kafka, you may follow these links:
@@ -40,7 +42,7 @@ To begin with ksqlDB and Kafka, you may follow these links:
   - [Step 1: Clone the Repository](#step-1-clone-the-repository)
   - [Step 2: Launch Docker Compose](#step-2-launch-docker-compose)
   - [Step 3: Use the ksqlDB CLI and Kafka UI](#step-3-use-the-ksqldb-cli-and-kafka-ui)
-  - [Step 4: Retrieve JAR Files from the CI/CD Pipelines](#step-4-retrieve-jar-files-from-the-cicd-pipelines)
+  - [Step 4: Retrieve JAR Files from the Latest Release](#step-4-retrieve-jar-files-from-the-latest-release)
   - [Step 5: Set Up iGrafx Connectors](#step-5-set-up-igrafx-connectors)
   - [Step 6: Set Up iGrafx UDFs](#step-6-set-up-igrafx-udfs)
 
@@ -214,35 +216,37 @@ to do so, replace the `admin` value of the `Dspring.security.user.name` and `Dsp
 > - [Video Courses](https://developer.confluent.io/courses/#fundamentals)
 
 
-### Step 4: Retrieve JAR Files from the CI/CD Pipelines
+### Step 4: Retrieve JAR Files from the Latest Release
 
 To utilize the iGrafx Connectors and UDFs, you need the corresponding JAR files. There are two ways to obtain these files:
 
 1. **Build the JAR Files Yourself**: Follow the instructions provided in the subsequent sections to build the JAR files manually.
-2. **Retrieve JAR Files from the CI/CD Pipelines**: You can directly download the JAR files from the CI/CD pipelines in the iGrafx GitHub Project.
+2. **Retrieve JAR Files from the latest Release**: You can directly download the JAR files from the latest release in the
+iGrafx Kafka Modules GitHub Project.
 
-To retrieve the JAR files of the iGrafx Connectors and UDFs from the CI/CD pipelines, follow these steps:
+To retrieve the JAR files of the iGrafx Connectors and UDFs from the latest release, follow these steps:
 
-1. Navigate to the **[Actions tab](https://github.com/igrafx/miningkafka/actions)** in the GitHub repository.
-2. In the left sidebar, select the workflow of interest: **iGrafx Connectors** or **UDFs**, as shown below:
+1. Navigate to the **[Release Section](https://github.com/igrafx/miningkafka/releases)** in the homepage of the GitHub repository.
+2. Make sure you are on the latest release. The latest release is indicated by the **green label** marked `Latest` next to the release number, as shown in the screenshot below:
 
-   ![iGrafx Connectors or UDFs](./imgs/igrafx-connectors-or-udfs.png)
+   ![Release Section](./imgs/release-latest.png)
 
-3. Click on the workflow name to access the workflow runs. For this example, we will focus on the **iGrafx Connectors** workflow.
-- Click on **iGrafx Connectors CI**. This will take you to the workflow runs page:
+3. In the `assets` section, you will find 2 zip files, one for the **Connectors** and one for the **UDFs**.
 
-  ![iGrafx Connectors CI](./imgs/igrafx-connectors-ci.png)
+   ![iGrafx Connectors ZIP](./imgs/release-assets.png)
 
-4. Select the most recent successful run (indicated by a **green checkmark**). You will arrive at a page similar to this:
+4. Click on **igrafx-connectors-artifacts.zip** or **igrafx-udfs-artifacts.zip** (or both if needed). 
+This will download a **ZIP file** containing the **JAR files**.
 
-   ![iGrafx Connectors CI](./imgs/igrafx-connectors-ci-2.png)
+5. Here is what you will find in the **`igrafx-connectors-artifacts.zip`**:
+  ![iGrafx Connectors ZIP](./imgs/connectors-zip.png)
 
-5. Locate and click on **igrafx-connectors-artifacts** (or **igrafx-udfs-artifacts** for the UDFs workflow) to download a ZIP file containing the JAR files.
+6. Here is what you will find in the **`igrafx-udfs-artifacts.zip`**:
+  ![iGrafx UDFs ZIP](./imgs/udfs-zip.png)
 
-6. Once downloaded, extract the desired JAR files:
+7. Once downloaded, extract the desired JAR files:
 - Place the **Connectors JAR files** in the `docker-compose/connect-plugins/` directory of the **Docker Compose** module. This allows them to be used in the **ksqlDB CLI**.
 
-  ![iGrafx Connectors CI](./imgs/igrafx-connectors-ci-3.png)
 
 - For **UDFs JAR files**, place them in the `docker-compose/extensions/` directory of the **Docker Compose** module. If this directory does not exist, create it.
 

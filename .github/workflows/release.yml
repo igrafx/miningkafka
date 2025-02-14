@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"  # Runs when pushing a tag like 1.0.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: List Uploaded Artifacts
+        run: ls -R ${{ runner.temp }}
+
+      # Download artifacts from the workflow that uploaded them
+      - name: Download igrafx-udfs-artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: igrafx-udfs-ci.yml
+          name: igrafx-udfs-artifact
+          path: artifacts/udfs
+          repo: igrafx/miningkafka
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download igrafx-connectors-artifacts
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: igrafx-connectors-ci.yml
+          name: igrafx-connectors-artifacts
+          path: artifacts/connectors
+          repo: igrafx/miningkafka
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List downloaded artifact files
+        run: ls -R artifacts/
+
+      - name: Create ZIP archives for artifacts
+        run: |
+          cd artifacts/udfs
+          zip -r ../../igrafx-udfs-artifact.zip *
+          cd ../../artifacts/connectors
+          zip -r ../../igrafx-connectors-artifact.zip *
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          draft: false
+          make_latest: true
+          generate_release_notes: true
+          prerelease: false
+          files: |
+            ${{ github.workspace }}/igrafx-udfs-artifact.zip
+            ${{ github.workspace }}/igrafx-connectors-artifact.zip

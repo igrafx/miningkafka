@@ -163,7 +163,7 @@ class AggregationSinkConnector extends SinkConnector {
   }
 
   override def version(): String = {
-    "2.35.0"
+    "1.0.0"
   }
 
   /** Method used to create recursively the list with the configurations we associate to tasks
