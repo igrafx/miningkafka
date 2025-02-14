@@ -40,6 +40,8 @@ In the **iGrafx UDFs** module, you will find 3 UDFs.
 
 A detailed tutorial can be found in the [howto.md](https://github.com/igrafx/miningkafka/blob/dev/howto.md) file.
 
+This version of the iGrafx Mining Kafka Modules is compatible with platforms of version 2.32.0 and above.
+
 To begin with ksqlDB and Kafka, you may follow these links:
 
 - [Main documentation](https://docs.confluent.io/platform/current/ksqldb/overview.html)

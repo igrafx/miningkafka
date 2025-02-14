@@ -23,6 +23,8 @@ In the **iGrafx UDFs** module, you will find 3 UDFs.
 
 Please note that an iGrafx account is required to fully utilize these modules. For account setup, please contact iGrafx support.
 
+This version of the iGrafx Mining Kafka Modules is compatible with platforms of version 2.32.0 and above.
+
 Find the home page of the GitHub repository for the iGrafx Kafka Modules [here](https://github.com/igrafx/miningkafka).
 
 To begin with ksqlDB and Kafka, you may follow these links:
