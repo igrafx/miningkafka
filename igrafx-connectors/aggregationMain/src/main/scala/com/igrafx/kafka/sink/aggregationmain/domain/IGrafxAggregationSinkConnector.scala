@@ -496,7 +496,7 @@ class IGrafxAggregationSinkConnector extends SinkConnector with ConfigUtils {
   }
 
   override def version(): String = {
-    "2.35.0"
+    "1.0.0"
   }
 
   def debugPrints(
