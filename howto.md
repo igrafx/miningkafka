@@ -237,10 +237,10 @@ To retrieve the JAR files of the iGrafx Connectors and UDFs from the latest rele
 This will download a **ZIP file** containing the **JAR files**.
 
 5. Here is what you will find in the **`igrafx-connectors-artifacts.zip`**:
-  ![iGrafx Connectors ZIP](./imgs/igrafx-connectors-ci-3.png)
+  ![iGrafx Connectors ZIP](./imgs/connectors-zip.png)
 
 6. Here is what you will find in the **`igrafx-udfs-artifacts.zip`**:
-  ![iGrafx UDFs CI](./imgs/udfs-zip.png)
+  ![iGrafx UDFs ZIP](./imgs/udfs-zip.png)
 
 7. Once downloaded, extract the desired JAR files:
 - Place the **Connectors JAR files** in the `docker-compose/connect-plugins/` directory of the **Docker Compose** module. This allows them to be used in the **ksqlDB CLI**.
