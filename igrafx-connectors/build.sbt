@@ -21,7 +21,7 @@ lazy val root = project
     core
   )
 
-val aggregationMainVersion = "2.35.0"
+val aggregationMainVersion = "1.0.0"
 lazy val aggregationMain = project
   .settings(
     name := "aggregationmain",
@@ -33,7 +33,7 @@ lazy val aggregationMain = project
   )
   .dependsOn(core % "compile->compile;test->test")
 
-val aggregationVersion = "2.35.0"
+val aggregationVersion = "1.0.0"
 lazy val aggregation = project
   .settings(
     name := "aggregation",
@@ -48,7 +48,7 @@ lazy val aggregation = project
 lazy val core = project
   .settings(
     name := "core",
-    version := "2.35.0",
+    version := "1.0.0",
     commonSettings,
     libraryDependencies ++= commonDependencies,
     dependencyOverrides ++= overrideDependencies

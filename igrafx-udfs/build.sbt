@@ -1,7 +1,7 @@
 import sbtassembly.MergeStrategy
 
 scalaVersion := "2.13.5"
-version := "2.35.0"
+version := "1.0.0"
 organization := "com.igrafx"
 organizationName := "iGrafx"
 organizationHomepage := Some(url("https://www.igrafx.com/"))
