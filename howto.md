@@ -120,6 +120,9 @@ To begin with ksqlDB and Kafka, you may follow these links:
     - [3rd UDF Example](#3rd-udf-example)
   - [Alerting with Kafka Using Slack](#alerting-with-kafka-using-slack)
   - [Alerting with Kafka Using Email](#alerting-with-kafka-using-mail)
+  - [Alerting on Predicted Data with Kafka using Mail](#alerting-on-predicted-data-with-kafka-using-mail)
+
+- [Troubleshooting](#troubleshooting)
 
 - [Further Documentation](#further-documentation)
 
@@ -3307,6 +3310,223 @@ If you want to check the detected connectors you may do the following:
 ```bash
 curl -s http://localhost:8083/connector-plugins | jq
 ```
+
+### Alerting on Predicted Data with Kafka using Mail
+
+It is possible to use predicted data to do comparisons and send alerts to a specified email with Kafka.
+
+Here, we want to compare the predicted end date with the given deadline dimension.
+If the predicted end date is greater than the deadline dimension, then we send an alert.
+
+Don't forget to set the business rule to get the prediction going.
+
+First we must get setup.
+
+We need the **Kafka JDBC Source connector**, which can be found [here](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc).
+
+Note that for this connector to work with Druid we also need the **Avatica Connector**. It can be found [here](https://mvnrepository.com/artifact/org.apache.calcite.avatica/avatica).
+Make sure to take the **Shaded version**. You can place it in the ``connect-plugins`` folder of the **`docker-compose`** directory.
+
+Then, add the following line to the **volumes** section of the **connect** container in the **`docker-compose.yml`** file:
+````bash
+      - ./avatica-1.25.0.jar:/usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
+````
+
+You must then add this variable to the **environment** section of the **connect** container in the **`docker-compose.yml`** file:
+````docker
+      CLASSPATH: /usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
+````
+
+Now, check the `.env` file and make sure you have the following versions for `CONFLUENT_PLATFORM` AND `KSQLDB_VERSION`/
+
+````bash
+CONFLUENT_PLATFORM=7.8.0
+KSQLDB_VERSION=0.29.0
+````
+You must now retrieve the **Camel Mail Sink Kafka Connector**, which can be found [here](https://camel.apache.org/camel-kafka-connector/next/reference/index.html).
+You can also find the matching documentation [here](https://camel.apache.org/camel-kafka-connector/4.8.x/reference/connectors/camel-mail-sink-kafka-sink-connector.html).
+
+Place the **Camel Mail Sink Kafka Connector** and the **Kafka JDBC Source connector** in the `docker-compose/connect-plugins/` directory, as referenced by the `CONNECT_PLUGIN_PATH` variable in the `docker-compose.yml`.
+
+![Connect plugin](./imgs/connec-plugins-mail.png)
+
+Place the **Avatica Connector** at the root of the `docker-compose` directory.
+
+Now that everything is set up, we can now create the necessary connectors and streams to make it work.
+
+The first step is to create the **JDBC Connector**. That can be done with the following command:
+
+```bash
+CREATE SOURCE CONNECTOR jdbc_source_alerts WITH (
+  'connector.class' = 'io.confluent.connect.jdbc.JdbcSourceConnector',
+  'errors.log.include.messages' = 'true',
+  'incrementing.column.name' = 'version',
+  'connection.password' = '<Workgroup Key>',
+  'validate.non.null' = 'false',
+  'tasks.max' = '1',
+  'query' = 'WITH predicted_cases AS (SELECT enddate, caseid, version FROM "<Project ID>" WHERE is_predicted = TRUE AND LOOKUP("case_version", ''<Project ID>_excluded_cases'') IS NULL), real_data AS (SELECT caseid, <Deadline Dimension>, version FROM "<Project ID>" WHERE <Deadline Dimension> IS NOT NULL AND (is_predicted IS NULL OR is_predicted = FALSE) AND LOOKUP("case_version", ''<Project ID>_excluded_cases'') IS NULL) SELECT * FROM (SELECT p.caseid, p.version FROM predicted_cases p JOIN real_data r ON p.caseid = r.caseid AND p.version = r.version WHERE TIME_FLOOR(MILLIS_TO_TIMESTAMP(CAST(p.enddate AS BIGINT)), ''P1D'') > TIME_PARSE(r.<Deadline Dimension>, ''dd/MM/yyyy''))',
+  'mode' = 'incrementing',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+  'topic.prefix' = 'alerts_',
+  'connection.user' = '<Workgroup ID>',
+  'poll.interval.ms' = '3000',
+  'name' = 'JDBC_SOURCE_ALERTS',
+  'errors.tolerance' = 'all',
+  'value.converter' = 'io.confluent.connect.avro.AvroConverter',
+  'connection.url' = '<JDBC Connection URL>',
+  'errors.log.enable' = 'true',
+  'key.converter' = 'io.confluent.connect.avro.AvroConverter',
+  'key.converter.schema.registry.url' = 'http://schema-registry:8081'
+);
+```
+Replace the **Workgroup Key** with your Workgroup Key, **Workgroup ID** with your Workgroup ID, **Project ID** with your Project ID and **JDBC Connection URL** with your JDBC Connection URL.
+These information may be found in the iGrafx workgroup settings, under the **Open API** tab.
+The **Deadline Dimension** is the dimension that we want to compare with the predicted end date.
+
+The SQL query under the `query` parameter means that the **CASEIDs** for which the predicted end date is **after** the deadline date are selected.
+
+Now let us create the Camel Mail Sink Kafka Connector. That can be done with the following command:
+`````shell
+CREATE SINK CONNECTOR camel_mail_sink WITH (
+'connector.class' = 'org.apache.camel.kafkaconnector.mailsink.CamelMailsinkSinkConnector',
+'camel.kamelet.mail-sink.connectionHost' = '<Mail Connection Host>',
+'camel.kamelet.mail-sink.username' = '<Mail Username>',
+'camel.kamelet.mail-sink.password' = '<Mail Password>',  
+'camel.kamelet.mail-sink.connectionPort' = '<Mail Connection Port>', 
+'camel.kamelet.mail-sink.from' = '<From email>',
+'camel.kamelet.mail-sink.to' = '<Email Recipient>',  -- Replace with actual recipient
+'camel.kamelet.mail-sink.subject' = '🚨 New Alert Notification',
+'tasks.max' = '1',
+'topics' = 'email_alerts_topic',
+'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+'key.converter' = 'org.apache.kafka.connect.storage.StringConverter'
+);
+``````
+
+Replace the **Mail Connection Host** with the mail server host (Example: smtp.gmail.com), **Mail Username** with the username to access the mail box,
+**Mail Password** with the password to access the mail box, **Mail Connection Port** with the mail server port, **From email** with the sender email and **Email Recipient** with the recipient email address.
+The **From email** and **Email Recipient** and **Mail Username** can both be the same.
+
+> If this connector is not being detected, make sure your images are up to date. If not please check the docker hub [here](https://hub.docker.com/r/confluentinc/cp-kafka/) for the latest version of each image.
+
+With the connectors having been created, we can now create the KSQLDB streams.
+First do this command:
+```bash
+SET 'auto.offset.reset'='earliest'; 
+```
+This command sets the offset to the earliest, ensuring that the CLI reads from the beginning of each topic.
+
+Now we create a stream to read the retrieved cases from the JDBC Connector.
+
+```bash
+CREATE STREAM alerts_stream WITH (
+KAFKA_TOPIC='alerts_',
+VALUE_FORMAT='AVRO'
+);
+```
+
+Finally, we create a stream to send the alerts to the Camel Mail Sink Kafka Connector.
+
+```bash
+CREATE STREAM email_alerts_stream WITH (
+KAFKA_TOPIC = 'email_alerts_topic',
+VALUE_FORMAT = 'KAFKA'
+) AS
+SELECT
+'⚠️ Alert ⚠️
+
+Case '+ caseid + ' is predicted to exceed its deadline.
+
+
+For more details, visit:
+' + 'https://<Your Mining Platform>/workgroups/' +
+CAST('<Your Workgroup ID>' AS VARCHAR) +
+'/projects/<Your Project ID>/case-explorer/' + REPLACE(REPLACE(CASEID, ' ', '%20'), '#', '%23')
+AS alert_message
+FROM alerts_stream
+EMIT CHANGES;
+```
+
+Replace the **Workgroup ID** with your Workgroup ID, **Project ID** with your Project ID and **Your Mining Platform** with your Mining Platform.
+
+Now when there are updated cases that have a duration greater than 40000000000, the alert will be sent to the specified email address.
+
+By setting the `VALUE_FORMAT` to KAFKA, the alert will be sent as a Kafka message to the specified topic, avoiding  double quotes.
+
+Furthermore, the `REPLACE(REPLACE(CASEID, ' ', '%20'), '#', '%23')` is necessary here because the case id contains both a space ` ` and the character `#` which is not allowed in the URL.
+This command makes sure that the space is replaced with `%20` and the `#` is replaced with `%23`, so that the URL is correctly formatted .
+ > If the CASE ID does not contain a space or a `#` character, this command is not necessary and can simply be replaced by `+ caseid`.
+
+When the alert is sent, the following message will be sent to the email address:
+
+![Image](./imgs/prediction_notif.png)
+
+You can then click on the link to see the case details.
+
+
+## Troubleshooting
+
+### Kafka UI Not Launching or Continuously Loading/Crashing
+
+**Symptoms**: Kafka UI fails to launch, keeps loading indefinitely, or crashes repeatedly. Common indicators include "Sync Replicas are set to 0" errors or schema registry issues.
+
+**Solution**:
+1. Stop all Docker containers:
+   ```bash
+   make stop
+   ```
+2. Delete the `/data` folder located at the root of the `docker-compose` folder.
+3. Restart the docker containers:
+   ```bash
+   make start
+   ```
+This process will clear persistent data and typically resolves initialization issues.
+
+
+This should fix the issue.
+
+### JDBC Connector Not Creating Topics
+
+**Symptoms**: JDBC connector runs but fails to create expected Kafka topics.
+
+**Potential Causes & Solutions**:
+- **Incorrect SQL Query**: Verify your query syntax and test it directly against your database
+- **Incrementing Mode Configuration**: When using `"mode": "incrementing"`, the connector automatically appends:
+```bash
+WHERE "version" > ? ORDER BY "version" ASC
+```
+
+The `?` parameter is automatically handled for incremental loading. Ensure your main query is compatible with this appended clause.
+
+**Resolution Steps:**
+
+1. Fix any query issues identified
+
+2. Stop containers: `make stop`
+
+3. Delete the `/data` folder
+
+4. Restart containers: `make start`
+
+5. Allow several minutes for topic creation before attempting to create streams
+
+### KSQLDB Alert common error
+
+**Symptoms**: URLs generated in alerts are not clickable or functional due to special characters.
+
+
+- `#` needs encoding as `%23` (URL fragment identifier)
+- Spaces need encoding as `%20`
+- Other special characters may also require encoding
+
+**Solution**: Since KSQLDB lacks built-in URL encoding functions, manually chain `REPLACE` statements for each special character:
+
+```bash
+-- Example encoding for # and space characters
+REPLACE(REPLACE(case_id, '#', '%23'), ' ', '%20')
+```
+Add additional `REPLACE` calls for other special characters your data may contain.
+
 
 ## Further documentation
 
