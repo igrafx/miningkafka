@@ -118,8 +118,12 @@ To begin with ksqlDB and Kafka, you may follow these links:
     - [Variation 1](#variation-1-1)
     - [Variation 2](#variation-2-1)
     - [3rd UDF Example](#3rd-udf-example)
+  - [Regular Project Unarchiving Workflow](#regular-project-unarchiving-workflow)
   - [Alerting with Kafka Using Slack](#alerting-with-kafka-using-slack)
   - [Alerting with Kafka Using Email](#alerting-with-kafka-using-mail)
+  - [Alerting on Predicted Data with Kafka using Mail](#alerting-on-predicted-data-with-kafka-using-mail)
+
+- [Troubleshooting](#troubleshooting)
 
 - [Further Documentation](#further-documentation)
 
@@ -140,10 +144,29 @@ Clone the iGrafx Kafka Modules repository to your local machine:
 ```
 git clone https://github.com/igrafx/miningkafka.git
 ```
+To do that you will need to install git:
+- [Git](https://git-scm.com/install/)
+
 Ensure you have Docker and Docker Compose installed on your system.
 Follow these links for installation instructions:
 - [Docker](https://docs.docker.com/get-started/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
+
+Furthermore, install chocolatey to be able to run the make commands. Do this in an admin windows Cmd hell:
+````
+@"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command " [System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+````
+You can then test if it was correctly installed by running the following command:
+```
+choco
+```
+
+Then open Git Bash terminal as admin and run the following command:
+```
+choco install make
+```
+
+You can now use the make commands without running into issues.
 
 ### Step 2: Launch Docker Compose
 This module provides a Kafka infrastructure setup located in the `docker-compose/` subdirectory.
@@ -203,7 +226,7 @@ the topics, the ksql pipelines you created and more.
 
 2. Use the credentials from the `docker-compose.yml`, located in the `/docker-compose` directory under the `JAVA_OPTS` variable:
 
-!![Kafka UI Credentials](./imgs/java_opts.png)
+![Kafka UI Credentials](./imgs/java_opts.png)
 - `Dspring.security.user.name` represents the username.
 - `Dspring.security.user.password` represents the password.
 
@@ -3029,7 +3052,86 @@ This can be problematic if, for instance, we then want to sum all the values in 
 
 Here, the calculated value would be **5x240**, whereas the real total price of the process is 240.
 
+### Regular Project Unarchiving Workflow
+
+Some workflows directly interact with iGrafx projects. If the workflow you are implementing interacts with a project, please make sure to setup this workflow.
+To ensure these workflows run smoothly, the project must be **unarchived and available**.
+
+> ⚠️ A project is automatically archived if it has not been used for **15 days**.
+
+If you attempt to use a project that is archived, the workflow will fail.  
+To prevent this, we can set up an automated process that **unarchives the project once every 7 days** (or at any desired interval).
+
+In order to do that, we will need the **Confluent Datagen Kafka Connector**.
+You can find this connector [here](https://www.confluent.io/hub/confluentinc/kafka-connect-datagen).
+
+You can also find the documentation [here](https://github.com/confluentinc/kafka-connect-datagen?tab=readme-ov-file)
+
+Download it, unzip it and place it in the `docker-compose/connect-plugins/` directory.
+
+We also need the **Camel HTTP Secured Sink Kafka Connector**, which can be found [here](https://camel.apache.org/camel-kafka-connector/next/reference/index.html).
+For this connector to work correctly, we also need the **Camel Kamelet jar**. You can find it [here](https://mvnrepository.com/artifact/org.apache.camel/camel-kamelet/4.14.1).
+
+Place both the Camel connector and the Kamelet JAR in the `docker-compose/connect-plugins/` directory.
+
+You may find the documentation for the camel connector [here](https://camel.apache.org/camel-kafka-connector/4.14.x/reference/connectors/camel-http-secured-sink-kafka-sink-connector.html#_connector_option_camel_kamelet_http-secured-sink_authMethod)
+
+Now that we are ready, we can create the workflow.
+
+First, lets setup the datagen connector:
+````bash
+CREATE SOURCE CONNECTOR WEEKLY_TRIGGER WITH (
+  'connector.class' = 'io.confluent.kafka.connect.datagen.DatagenConnector',
+  'kafka.topic' = 'secured-http-trigger',
+  'quickstart' = 'pageviews',
+  'max.interval' = 604800000,
+  'iterations' = -1,
+  'tasks.max' = '1',
+  
+  -- Force string output instead of structured JSON
+  'value.converter' = 'org.apache.kafka.connect.storage.StringConverter'
+);
+````
+This connector will send a message in string format to the given kafka topic once every 7 days. This value is in millisecond and can be changed if necessary.
+This message will be used as the trigger by the Camel connector.
+
+Once ready, execute this connector.
+
+Next, lets setup the camel connector.
+The Camel connector listens to the same topic (`secured-http-trigger`) and sends an authenticated HTTP `PUT` request to unarchive the project.
+````bash
+CREATE SINK CONNECTOR UNARCHIVE_PROJECT_HTTP WITH (
+  'connector.class' = 'org.apache.camel.kafkaconnector.httpsecuredsink.CamelHttpsecuredsinkSinkConnector',
+  'tasks.max' = '1',
+  'topics' = 'secured-http-trigger',
+
+  -- HTTP Config
+  'camel.kamelet.http-secured-sink.url' = '<API URL>/pub/projects/<Project ID>/unarchive',
+  'camel.kamelet.http-secured-sink.method' = 'PUT',
+
+  -- OAuth2 Auth Config
+  'camel.kamelet.http-secured-sink.oauth2ClientId' = '<Workgroup ID>',
+  'camel.kamelet.http-secured-sink.oauth2ClientSecret' = '<Workgroup Key>',
+  'camel.kamelet.http-secured-sink.oauth2TokenEndpoint' = '<Authentication URL>/protocol/openid-connect/token',
+
+  'value.converter' = 'org.apache.kafka.connect.storage.StringConverter'
+);
+````
+Replace the `API URL`, `Workgroup ID`, `Workgroup Key` and `Authentication URL` with your own credentials that can be found in the iGrafx workgroup settings Open API page.
+
+Replace the Project ID with the project that you want to unarchive.
+
+The `value.converter` ensures compatibility between connectors by sending messages in plain string format.
+
+Note that it uses the same topic as the datagen connector and the Camel connector performs the unarchive request.
+
+This connector can also be used to run other routes. To do that simply replace the endpoint URL and its method before running the connector.
+
+Once both connectors are running, your workflow will automatically unarchive the project every 7 days, ensuring it remains active and ready for other automated processes.
+
 ### Alerting with Kafka using Slack
+
+> Before setting up this workflow, make sure to implement the [Regular Project Unarchiving Workflow](#regular-project-unarchiving-workflow) as this is necessary to make sure your project is accessible.
 
 It is possible to send alerts to a preferred destination with Kafka.
 
@@ -3166,6 +3268,8 @@ curl -s http://localhost:8083/connector-plugins | jq
 ```
 
 ### Alerting with Kafka using Mail
+
+> Before setting up this workflow, make sure to implement the [Regular Project Unarchiving Workflow](#regular-project-unarchiving-workflow) as this is necessary to make sure your project is accessible.
 
 It is possible to send alerts to a specified email with Kafka.
 
@@ -3307,6 +3411,225 @@ If you want to check the detected connectors you may do the following:
 ```bash
 curl -s http://localhost:8083/connector-plugins | jq
 ```
+
+### Alerting on Predicted Data with Kafka using Mail
+
+> Before setting up this workflow, make sure to implement the [Regular Project Unarchiving Workflow](#regular-project-unarchiving-workflow) as this is necessary to make sure your project is accessible.
+
+It is possible to use predicted data to do comparisons and send alerts to a specified email with Kafka.
+
+Here, we want to compare the predicted end date with the given deadline dimension.
+If the predicted end date is greater than the deadline dimension, then we send an alert.
+
+Don't forget to set the business rule to get the prediction going.
+
+First we must get setup.
+
+We need the **Kafka JDBC Source connector**, which can be found [here](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc).
+
+Note that for this connector to work with Druid we also need the **Avatica Connector**. It can be found [here](https://mvnrepository.com/artifact/org.apache.calcite.avatica/avatica).
+Make sure to take the **Shaded version**. You can place it in the ``connect-plugins`` folder of the **`docker-compose`** directory.
+
+Then, add the following line to the **volumes** section of the **connect** container in the **`docker-compose.yml`** file:
+````bash
+      - ./avatica-1.25.0.jar:/usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
+````
+
+You must then add this variable to the **environment** section of the **connect** container in the **`docker-compose.yml`** file:
+````docker
+      CLASSPATH: /usr/share/java/kafka-connect-jdbc/avatica-1.25.0.jar
+````
+
+Now, check the `.env` file and make sure you have the following versions for `CONFLUENT_PLATFORM` AND `KSQLDB_VERSION`/
+
+````bash
+CONFLUENT_PLATFORM=7.8.0
+KSQLDB_VERSION=0.29.0
+````
+You must now retrieve the **Camel Mail Sink Kafka Connector**, which can be found [here](https://camel.apache.org/camel-kafka-connector/next/reference/index.html).
+You can also find the matching documentation [here](https://camel.apache.org/camel-kafka-connector/4.8.x/reference/connectors/camel-mail-sink-kafka-sink-connector.html).
+
+Place the **Camel Mail Sink Kafka Connector** and the **Kafka JDBC Source connector** in the `docker-compose/connect-plugins/` directory, as referenced by the `CONNECT_PLUGIN_PATH` variable in the `docker-compose.yml`.
+
+![Connect plugin](./imgs/connec-plugins-mail.png)
+
+Place the **Avatica Connector** at the root of the `docker-compose` directory.
+
+Now that everything is set up, we can now create the necessary connectors and streams to make it work.
+
+The first step is to create the **JDBC Connector**. That can be done with the following command:
+
+```bash
+CREATE SOURCE CONNECTOR jdbc_source_alerts WITH (
+  'connector.class' = 'io.confluent.connect.jdbc.JdbcSourceConnector',
+  'errors.log.include.messages' = 'true',
+  'incrementing.column.name' = 'version',
+  'connection.password' = '<Workgroup Key>',
+  'validate.non.null' = 'false',
+  'tasks.max' = '1',
+  'query' = 'WITH predicted_cases AS (SELECT enddate, caseid, version FROM "<Project ID>" WHERE is_predicted = TRUE AND LOOKUP("case_version", ''<Project ID>_excluded_cases'') IS NULL), real_data AS (SELECT caseid, <Deadline Dimension>, version FROM "<Project ID>" WHERE <Deadline Dimension> IS NOT NULL AND (is_predicted IS NULL OR is_predicted = FALSE) AND LOOKUP("case_version", ''<Project ID>_excluded_cases'') IS NULL) SELECT * FROM (SELECT p.caseid, p.version FROM predicted_cases p JOIN real_data r ON p.caseid = r.caseid AND p.version = r.version WHERE TIME_FLOOR(MILLIS_TO_TIMESTAMP(CAST(p.enddate AS BIGINT)), ''P1D'') > TIME_PARSE(r.<Deadline Dimension>, ''dd/MM/yyyy''))',
+  'mode' = 'incrementing',
+  'value.converter.schema.registry.url' = 'http://schema-registry:8081',
+  'topic.prefix' = 'alerts_',
+  'connection.user' = '<Workgroup ID>',
+  'poll.interval.ms' = '3000',
+  'name' = 'JDBC_SOURCE_ALERTS',
+  'errors.tolerance' = 'all',
+  'value.converter' = 'io.confluent.connect.avro.AvroConverter',
+  'connection.url' = '<JDBC Connection URL>',
+  'errors.log.enable' = 'true',
+  'key.converter' = 'io.confluent.connect.avro.AvroConverter',
+  'key.converter.schema.registry.url' = 'http://schema-registry:8081'
+);
+```
+Replace the **Workgroup Key** with your Workgroup Key, **Workgroup ID** with your Workgroup ID, **Project ID** with your Project ID and **JDBC Connection URL** with your JDBC Connection URL.
+These information may be found in the iGrafx workgroup settings, under the **Open API** tab.
+The **Deadline Dimension** is the dimension that we want to compare with the predicted end date.
+
+The SQL query under the `query` parameter means that the **CASEIDs** for which the predicted end date is **after** the deadline date are selected.
+
+Now let us create the Camel Mail Sink Kafka Connector. That can be done with the following command:
+`````shell
+CREATE SINK CONNECTOR camel_mail_sink WITH (
+'connector.class' = 'org.apache.camel.kafkaconnector.mailsink.CamelMailsinkSinkConnector',
+'camel.kamelet.mail-sink.connectionHost' = '<Mail Connection Host>',
+'camel.kamelet.mail-sink.username' = '<Mail Username>',
+'camel.kamelet.mail-sink.password' = '<Mail Password>',  
+'camel.kamelet.mail-sink.connectionPort' = '<Mail Connection Port>', 
+'camel.kamelet.mail-sink.from' = '<From email>',
+'camel.kamelet.mail-sink.to' = '<Email Recipient>',  -- Replace with actual recipient
+'camel.kamelet.mail-sink.subject' = '🚨 New Alert Notification',
+'tasks.max' = '1',
+'topics' = 'email_alerts_topic',
+'value.converter' = 'org.apache.kafka.connect.storage.StringConverter',
+'key.converter' = 'org.apache.kafka.connect.storage.StringConverter'
+);
+``````
+
+Replace the **Mail Connection Host** with the mail server host (Example: smtp.gmail.com), **Mail Username** with the username to access the mail box,
+**Mail Password** with the password to access the mail box, **Mail Connection Port** with the mail server port, **From email** with the sender email and **Email Recipient** with the recipient email address.
+The **From email** and **Email Recipient** and **Mail Username** can both be the same.
+
+> If this connector is not being detected, make sure your images are up to date. If not please check the docker hub [here](https://hub.docker.com/r/confluentinc/cp-kafka/) for the latest version of each image.
+
+With the connectors having been created, we can now create the KSQLDB streams.
+First do this command:
+```bash
+SET 'auto.offset.reset'='earliest'; 
+```
+This command sets the offset to the earliest, ensuring that the CLI reads from the beginning of each topic.
+
+Now we create a stream to read the retrieved cases from the JDBC Connector.
+
+```bash
+CREATE STREAM alerts_stream WITH (
+KAFKA_TOPIC='alerts_',
+VALUE_FORMAT='AVRO'
+);
+```
+
+Finally, we create a stream to send the alerts to the Camel Mail Sink Kafka Connector.
+
+```bash
+CREATE STREAM email_alerts_stream WITH (
+KAFKA_TOPIC = 'email_alerts_topic',
+VALUE_FORMAT = 'KAFKA'
+) AS
+SELECT
+'⚠️ Alert ⚠️
+
+Case '+ caseid + ' is predicted to exceed its deadline.
+
+
+For more details, visit:
+' + 'https://<Your Mining Platform>/workgroups/' +
+CAST('<Your Workgroup ID>' AS VARCHAR) +
+'/projects/<Your Project ID>/case-explorer/' + REPLACE(REPLACE(CASEID, ' ', '%20'), '#', '%23')
+AS alert_message
+FROM alerts_stream
+EMIT CHANGES;
+```
+
+Replace the **Workgroup ID** with your Workgroup ID, **Project ID** with your Project ID and **Your Mining Platform** with your Mining Platform.
+
+Now when there are updated cases that have a duration greater than 40000000000, the alert will be sent to the specified email address.
+
+By setting the `VALUE_FORMAT` to KAFKA, the alert will be sent as a Kafka message to the specified topic, avoiding  double quotes.
+
+Furthermore, the `REPLACE(REPLACE(CASEID, ' ', '%20'), '#', '%23')` is necessary here because the case id contains both a space ` ` and the character `#` which is not allowed in the URL.
+This command makes sure that the space is replaced with `%20` and the `#` is replaced with `%23`, so that the URL is correctly formatted .
+ > If the CASE ID does not contain a space or a `#` character, this command is not necessary and can simply be replaced by `+ caseid`.
+
+When the alert is sent, the following message will be sent to the email address:
+
+![Image](./imgs/prediction_notif.png)
+
+You can then click on the link to see the case details.
+
+
+## Troubleshooting
+
+### Kafka UI Not Launching or Continuously Loading/Crashing
+
+**Symptoms**: Kafka UI fails to launch, keeps loading indefinitely, or crashes repeatedly. Common indicators include "Sync Replicas are set to 0" errors or schema registry issues.
+
+**Solution**:
+1. Stop all Docker containers:
+   ```bash
+   make stop
+   ```
+2. Delete the `/data` folder located at the root of the `docker-compose` folder.
+3. Restart the docker containers:
+   ```bash
+   make start
+   ```
+This process will clear persistent data and typically resolves initialization issues.
+
+
+This should fix the issue.
+
+### JDBC Connector Not Creating Topics
+
+**Symptoms**: JDBC connector runs but fails to create expected Kafka topics.
+
+**Potential Causes & Solutions**:
+- **Incorrect SQL Query**: Verify your query syntax and test it directly against your database
+- **Incrementing Mode Configuration**: When using `"mode": "incrementing"`, the connector automatically appends:
+```bash
+WHERE "version" > ? ORDER BY "version" ASC
+```
+
+The `?` parameter is automatically handled for incremental loading. Ensure your main query is compatible with this appended clause.
+
+**Resolution Steps:**
+
+1. Fix any query issues identified
+
+2. Stop containers: `make stop`
+
+3. Delete the `/data` folder
+
+4. Restart containers: `make start`
+
+5. Allow several minutes for topic creation before attempting to create streams
+
+### KSQLDB Alert common error
+
+**Symptoms**: URLs generated in alerts are not clickable or functional due to special characters.
+
+
+- `#` needs encoding as `%23` (URL fragment identifier)
+- Spaces need encoding as `%20`
+- Other special characters may also require encoding
+
+**Solution**: Since KSQLDB lacks built-in URL encoding functions, manually chain `REPLACE` statements for each special character:
+
+```bash
+-- Example encoding for # and space characters
+REPLACE(REPLACE(case_id, '#', '%23'), ' ', '%20')
+```
+Add additional `REPLACE` calls for other special characters your data may contain.
+
 
 ## Further documentation
 
