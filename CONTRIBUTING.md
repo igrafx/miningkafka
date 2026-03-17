@@ -209,6 +209,9 @@ Thank you for contributing!
 - Keep the documentation up to date. If you make changes to the code that affect the functionality or usage, ensure that the documentation reflects those changes.
 
 ## Tag and Release
+
+>When tagging the project, an automatic release is created with the latest artifacts in github. These artifacts include the ZIP archives of the `igrafx-udfs-artifact` and `igrafx-connectors-artifacts`, which are downloaded from the workflows `igrafx-udfs-ci.yml` and `igrafx-connectors-ci.yml` respectively.
+
 To tag a version of the project, create a branch for the release. Change all the version instances in the project.
 
 The version number related to the **UDFs** should be changed in the respective ``build.sbt`` file.
