@@ -213,7 +213,7 @@ To tag a version of the project, create a branch for the release. Change all the
 
 The version number related to the **UDFs** should be changed in the respective ``build.sbt`` file.
 
-The version number related to the **Connectors** should be changed in the respective ``build.sbt`` file and in the function ``version()`` present in the Connector's class.
+The version number related to the **Connectors** should be changed in the respective ``build.sbt`` file and in the function ``version()`` present in the Connector's class. The latter can be found in the `AggregationSinkCOnnector.scala` and `IGrafxAggregationSinkConnector.scala` files.
 
 Then, make sure to use the following command, where ``version number`` is the version number you want to tag:
 ````bash
