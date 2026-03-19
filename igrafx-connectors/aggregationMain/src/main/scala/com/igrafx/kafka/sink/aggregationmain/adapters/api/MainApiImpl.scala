@@ -16,7 +16,7 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods.{pretty, render}
 import org.json4s.native.JsonMethods._
 import org.slf4j.{Logger, LoggerFactory}
-import scalaj.http.{Http, HttpOptions, MultiPart}
+import scalaj.http.{Http, HttpOptions}
 
 import java.io.File
 import java.nio.file.Files
@@ -225,10 +225,12 @@ class MainApiImpl extends MainApi {
     }
 
     Future {
-      Http(s"$apiUrl/project/$projectId/file?teamId=$workGroupId")
-        .postMulti(MultiPart("file", ficName, "text/csv", bytes))
+      Http(s"$apiUrl/workgroups/$workGroupId/projects/$projectId/files")
+        .postData(bytes)
         .header("Authorization", s"Bearer $token")
         .header("accept", "application/json, text/plain, */*")
+        .header("Content-Type", "application/octet-stream")
+        .header("Content-Disposition", s"""attachment; filename="$ficName"""")
         .option(HttpOptions.readTimeout(Constants.timeoutApiCallValueInMilliSeconds))
         .asString
     }.map { resultAddFile =>
